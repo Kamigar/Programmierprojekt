@@ -1,0 +1,29 @@
+
+Benchmark stgtregbz.fmi Scanner vs. BufferedReader
+
+[lye@lyePad RoutePlanner]$ time { java -Xmx4g -classpath bin routeplanner.backend.app.Main; }
+Read header of file:
+  1132113 nodes
+  2292887 edges
+Nodes read
+Edges read
+Adjacency graph created
+1132113 nodes read
+
+real	0m5,400s
+user	0m9,315s
+sys	0m0,886s
+
+[lye@lyePad RoutePlanner]$ time { java -Xmx4g -classpath bin routeplanner.backend.app.Main; }
+Read header of file:
+  1132113 nodes
+  2292887 edges
+Nodes read
+Edges read
+Adjacency graph created
+1132113 nodes read
+
+real	0m2,254s
+user	0m4,913s
+sys	0m0,291s
+

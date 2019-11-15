@@ -1,9 +1,9 @@
 package routeplanner.backend.app;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.LinkedList;
-import java.util.Scanner;
 import java.util.Vector;
 
 import routeplanner.backend.model.*;
@@ -42,11 +42,10 @@ public class FileScanner {
 		return i;
 	}
 	
-	private static void getNextRelevantLine(StringPosition pos, Scanner scanner) {
+	private static void getNextRelevantLine(StringPosition pos, BufferedReader reader) throws IOException {
 		
-		while (scanner.hasNextLine()) {
-			
-			String line = scanner.nextLine();
+		String line;
+		while ((line = reader.readLine()) != null) {
 			
 			int i = skipWhitespace(line, 0);
 			if (i < line.length() && line.charAt(i) != '#') {
@@ -59,9 +58,9 @@ public class FileScanner {
 		pos.index = -1;
 	}
 	
-	private static void readHeader(int[] cnt, Scanner scanner, StringPosition pos) {
+	private static void readHeader(int[] cnt, BufferedReader reader, StringPosition pos) throws IOException {
 		
-		getNextRelevantLine(pos, scanner);
+		getNextRelevantLine(pos, reader);
 		if (pos.string == null) {
 			throw null;
 		}
@@ -74,7 +73,7 @@ public class FileScanner {
 			throw null;
 		}
 		
-		getNextRelevantLine(pos, scanner);
+		getNextRelevantLine(pos, reader);
 		if (pos.string == null) {
 			throw null;
 		}
@@ -88,9 +87,9 @@ public class FileScanner {
 		}
 	}
 	
-	private static FmiNode readNode(Scanner scanner, StringPosition pos) {
+	private static FmiNode readNode(BufferedReader reader, StringPosition pos) throws IOException {
 		
-		getNextRelevantLine(pos, scanner);
+		getNextRelevantLine(pos, reader);
 		if (pos.string == null) {
 			throw null;
 		}
@@ -130,9 +129,9 @@ public class FileScanner {
 		return new FmiNode(id, latitude, longitude);
 	}
 	
-	private static FmiEdge readEdge(Scanner scanner, StringPosition pos) {
+	private static FmiEdge readEdge(BufferedReader reader, StringPosition pos) throws IOException {
 		
-		getNextRelevantLine(pos, scanner);
+		getNextRelevantLine(pos, reader);
 		if (pos.string == null) {
 			throw null;
 		}
@@ -172,16 +171,18 @@ public class FileScanner {
 		return new FmiEdge(srcId, trgId, cost);
 	}
 
-	public static Node[] read(String filename) throws FileNotFoundException {
+	public static Node[] read(String filename) throws IOException {
 		
-		File file = new File(filename);
-
-		Scanner scanner = new Scanner(file);
+		BufferedReader reader = new BufferedReader(new FileReader(filename));
 		
 		StringPosition pos = new StringPosition();
 		int cnt[] = new int[2];
 		
-		readHeader(cnt, scanner, pos);
+		readHeader(cnt, reader, pos);
+		
+		System.out.println("Read header of file:");
+		System.out.println("  " + cnt[0] + " nodes");
+		System.out.println("  " + cnt[1] + " edges");
 		
 		Node[] nodes = new Node[cnt[0]];
 		Edge[] edges = new Edge[cnt[1]];
@@ -190,7 +191,7 @@ public class FileScanner {
 		
 		for (int i = 0; i < cnt[0]; i++) {
 			
-			FmiNode t = readNode(scanner, pos);
+			FmiNode t = readNode(reader, pos);
 
 			if (t.id() < 0 || t.id() >= cnt[0]) {
 				throw null;
@@ -204,9 +205,11 @@ public class FileScanner {
 			relations.add(new LinkedList<Edge>());
 		}
 		
+		System.out.println("Nodes read");
+		
 		for (int i = 0; i < cnt[1]; i++) {
 			
-			FmiEdge t = readEdge(scanner, pos);
+			FmiEdge t = readEdge(reader, pos);
 			
 			if (t.srcId() < 0 || t.srcId() >= cnt[0]
 					|| t.trgId() < 0 || t.trgId() >= cnt[0]) {
@@ -218,6 +221,8 @@ public class FileScanner {
 			relations.get(t.srcId()).add(edges[i]);
 		}
 		
+		System.out.println("Edges read");
+		
 		for (int i = 0; i < cnt[0]; i++) {
 			
 			Edge[] e = new Edge[relations.get(i).size()];
@@ -226,7 +231,9 @@ public class FileScanner {
 			nodes[i].setEdges(e);
 		}
 		
-		scanner.close();
+		System.out.println("Adjacency graph created");
+		
+		reader.close();
 		
 		return nodes;
 	}
