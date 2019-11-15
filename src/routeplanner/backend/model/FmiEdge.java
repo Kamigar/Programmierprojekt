@@ -1,8 +1,8 @@
-package routeplanner.backend.model.fmi;
+package routeplanner.backend.model;
 
-public class Edge {
+public class FmiEdge {
 
-	public Edge(int srcId, int trgId, double cost) {
+	public FmiEdge(int srcId, int trgId, double cost) {
 
 		_srcId = srcId;
 		_trgId = trgId;

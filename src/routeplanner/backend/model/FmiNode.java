@@ -1,8 +1,8 @@
-package routeplanner.backend.model.fmi;
+package routeplanner.backend.model;
 
-public class Node {
+public class FmiNode {
 
-	public Node(int id, double latitude, double longitude) {
+	public FmiNode(int id, double latitude, double longitude) {
 
 		_id = id;
 		_latitude = latitude;
