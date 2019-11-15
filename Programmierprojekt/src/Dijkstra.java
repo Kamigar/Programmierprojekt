@@ -1,12 +1,15 @@
+import java.io.*;
+
+
 
 public class Dijkstra {
-	
 	public static void main(String[] args) {
-
-	}
-	public void dijkstra() {
-		System.out.println("if i see this on my lafptop vi von ZULUL");
-		System.out.println("vi actually von PogU ZULUL");
-		System.out.println("nice");
+		try {
+			//Falls jemand von euch des sich bei sich selber testen möchte, soll er einfach den eigenen dateipfad angeben (Entpackt den Deutschland-Graphen)
+			BufferedReader deutschlandgraph = new BufferedReader(new FileReader("C:\\Users\\kamig\\Desktop\\Neuer Ordner\\germany.fmi"));
+		} catch (FileNotFoundException e) {
+			
+			e.printStackTrace();
+		}
 	}
 }
