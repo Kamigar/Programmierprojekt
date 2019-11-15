@@ -3,6 +3,12 @@ package routeplanner.backend.model;
 public class Node {
 	
 	public Node(int id, double latitude,
+			double longitude) {
+		
+		this(id, latitude, longitude, null);
+	}
+	
+	public Node(int id, double latitude,
 			double longitude, Edge[] edges) {
 
 		_id = id;
@@ -25,6 +31,10 @@ public class Node {
 	
 	public Edge[] edges() {
 		return _edges;
+	}
+	
+	public void setEdges(Edge[] edges) {
+		_edges = edges;
 	}
 
 	
