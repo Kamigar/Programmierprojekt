@@ -2,8 +2,11 @@ package routeplanner.backend.app;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.LinkedList;
 import java.util.Scanner;
-import routeplanner.backend.model.fmi.*;
+import java.util.Vector;
+
+import routeplanner.backend.model.*;
 
 public class FileScanner {
 	
@@ -85,7 +88,7 @@ public class FileScanner {
 		}
 	}
 	
-	private static Node readNode(Scanner scanner, StringPosition pos) {
+	private static FmiNode readNode(Scanner scanner, StringPosition pos) {
 		
 		getNextRelevantLine(pos, scanner);
 		if (pos.string == null) {
@@ -124,10 +127,10 @@ public class FileScanner {
 			throw null;
 		}
 		
-		return new Node(id, latitude, longitude);
+		return new FmiNode(id, latitude, longitude);
 	}
 	
-	private static Edge readEdge(Scanner scanner, StringPosition pos) {
+	private static FmiEdge readEdge(Scanner scanner, StringPosition pos) {
 		
 		getNextRelevantLine(pos, scanner);
 		if (pos.string == null) {
@@ -166,10 +169,10 @@ public class FileScanner {
 			throw null;
 		}
 		
-		return new Edge(srcId, trgId, cost);
+		return new FmiEdge(srcId, trgId, cost);
 	}
 
-	public static routeplanner.backend.model.Node[] read(String filename) throws FileNotFoundException {
+	public static Node[] read(String filename) throws FileNotFoundException {
 		
 		File file = new File(filename);
 
@@ -183,27 +186,48 @@ public class FileScanner {
 		Node[] nodes = new Node[cnt[0]];
 		Edge[] edges = new Edge[cnt[1]];
 		
+		Vector<LinkedList<Edge>> relations = new Vector<LinkedList<Edge>>(cnt[0]);
+		
 		for (int i = 0; i < cnt[0]; i++) {
 			
-			Node t = readNode(scanner, pos);
+			FmiNode t = readNode(scanner, pos);
+
 			if (t.id() < 0 || t.id() >= cnt[0]) {
 				throw null;
 			}
+
 			if (nodes[t.id()] != null) {
 				throw null;
 			}
 			
-			nodes[t.id()] = t;
+			nodes[t.id()] = new Node(t.id(), t.latitude(), t.longitude());
+			relations.add(new LinkedList<Edge>());
 		}
 		
 		for (int i = 0; i < cnt[1]; i++) {
 			
-			edges[i] = readEdge(scanner, pos);
+			FmiEdge t = readEdge(scanner, pos);
+			
+			if (t.srcId() < 0 || t.srcId() >= cnt[0]
+					|| t.trgId() < 0 || t.trgId() >= cnt[0]) {
+				throw null;
+			}
+			
+			edges[i] = new Edge(nodes[t.srcId()], nodes[t.trgId()], t.cost());
+
+			relations.get(t.srcId()).add(edges[i]);
 		}
 		
+		for (int i = 0; i < cnt[0]; i++) {
+			
+			Edge[] e = new Edge[relations.get(i).size()];
+			e = relations.get(i).toArray(e);
+
+			nodes[i].setEdges(e);
+		}
 		
 		scanner.close();
 		
-		return null;
+		return nodes;
 	}
 }
