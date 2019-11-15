@@ -1,4 +1,4 @@
-package routeplanner.backend.model;
+package routeplanner.backend.model.fmi;
 
 public class Node {
 
