@@ -11,9 +11,14 @@ public class Main {
 
 		try {
 
-			Node[] nodes = FileScanner.read("data/stgtregbz.fmi");
+			//Node[] nodes = FileScanner.read("data/toy.fmi");
+			Node[] nodes = FileScanner.read("data/bw.fmi");
+			//Node[] nodes = FileScanner.read("data/stgtregbz.fmi");
 			
 			System.out.println("" + nodes.length + " nodes read");
+			
+			Dijkstra.DijkstraStructure struct = Dijkstra.calculate(nodes, 3);
+			
 			
 			int x = 34;
 
