@@ -1,31 +1,14 @@
 package routeplanner.backend.app;
 
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.PriorityQueue;
+import java.util.Vector;
 
 import routeplanner.backend.model.*;
 
 public class Dijkstra {
 	
-	private static final int s_defaultQueueCapacity = 256;
-	
 	public static class DijkstraStructure {
 		public DijkstraNode[] nodes;
-		public LinkedList<DijkstraNode> ordered;
-	}
-	
-	public static class DistanceComparator implements Comparator<DijkstraNode> {
-		
-		@Override
-		public int compare(DijkstraNode first, DijkstraNode second) {
-
-			double diff = first.distance() - second.distance();
-
-			if (diff > 0) return 1;
-			if (diff < 0) return -1;
-			return 0;
-		}
+		public Vector<DijkstraNode> ordered;
 	}
 	
 	public static DijkstraStructure calculate(Node[] structure, int index) {
@@ -33,18 +16,23 @@ public class Dijkstra {
 		System.out.println("Create Dijkstra nodes");
 		
 		DijkstraNode[] nodes = new DijkstraNode[structure.length];
-		
-		PriorityQueue<DijkstraNode> nodeList = new PriorityQueue<DijkstraNode>(
-				s_defaultQueueCapacity, new DistanceComparator());
 
-		LinkedList<DijkstraNode> finishedNodes = new LinkedList<DijkstraNode>();
+		Vector<Queue.Entry<DijkstraNode>> entries =
+				new Vector<Queue.Entry<DijkstraNode>>(structure.length);
+
+		for (int i = 0; i < structure.length; i++)
+			entries.add(null);
+		
+		Queue<DijkstraNode> nodeList = new Queue<DijkstraNode>(structure.length);
+
+		Vector<DijkstraNode> finishedNodes = new Vector<DijkstraNode>(structure.length);
 		
 		for (int i = 0; i < structure.length; i++) {
 			nodes[i] = new DijkstraNode(structure[i]);
 		}
 		
 		nodes[index].setDistance(0);
-		nodeList.add(nodes[index]);
+		entries.set(index, nodeList.insert(nodes[index], 0));
 
 		System.out.println("Calculate distances");
 		
@@ -52,7 +40,7 @@ public class Dijkstra {
 			
 			DijkstraNode current = nodeList.poll();
 
-			finishedNodes.addLast(current);
+			finishedNodes.add(current);
 			
 			for (Edge edge : current.node().edges()) {
 				
@@ -61,13 +49,20 @@ public class Dijkstra {
 				double newDistance = current.distance() + edge.cost();
 				double oldDistance = neighbour.distance();
 				if (oldDistance > newDistance) {
-					
-					nodeList.remove(neighbour);
 
 					neighbour.setDistance(newDistance);
 					neighbour.setPrevious(current);
 					
-					nodeList.add(neighbour);
+					Queue.Entry<DijkstraNode> entry = entries.get(neighbour.node().id());
+
+					if (entry == null) {
+						
+						entries.set(neighbour.node().id(), nodeList.insert(neighbour, neighbour.distance()));
+
+					} else {
+						
+						nodeList.decreaseKey(entry, neighbour.distance());
+					}
 				}
 			}
 		}
