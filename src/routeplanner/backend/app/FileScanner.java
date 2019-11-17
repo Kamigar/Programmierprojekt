@@ -171,69 +171,83 @@ public class FileScanner {
 		return new FmiEdge(srcId, trgId, cost);
 	}
 
-	public static Node[] read(String filename) throws IOException {
+	public static Node[] read(String filename) throws Exception {
+		
+		Node[] nodes = null;
+		Edge[] edges = null;
 		
 		BufferedReader reader = new BufferedReader(new FileReader(filename));
 		
-		StringPosition pos = new StringPosition();
-		int cnt[] = new int[2];
-		
-		readHeader(cnt, reader, pos);
-		
-		System.out.println("Read header of file:");
-		System.out.println("  " + cnt[0] + " nodes");
-		System.out.println("  " + cnt[1] + " edges");
-		
-		Node[] nodes = new Node[cnt[0]];
-		Edge[] edges = new Edge[cnt[1]];
-		
-		Vector<LinkedList<Edge>> relations = new Vector<LinkedList<Edge>>(cnt[0]);
-		
-		for (int i = 0; i < cnt[0]; i++) {
-			
-			FmiNode t = readNode(reader, pos);
+		try {
 
-			if (t.id() < 0 || t.id() >= cnt[0]) {
-				throw null;
-			}
+			StringPosition pos = new StringPosition();
+			int cnt[] = new int[2];
+			
+			readHeader(cnt, reader, pos);
+			
+			System.out.println("Read header of file:");
+			System.out.println("  " + cnt[0] + " nodes");
+			System.out.println("  " + cnt[1] + " edges");
+			
+			nodes = new Node[cnt[0]];
+			edges = new Edge[cnt[1]];
+			
+			Vector<LinkedList<Edge>> relations = new Vector<LinkedList<Edge>>(cnt[0]);
+			
+			for (int i = 0; i < cnt[0]; i++) {
+				
+				FmiNode t = readNode(reader, pos);
 
-			if (nodes[t.id()] != null) {
-				throw null;
-			}
-			
-			nodes[t.id()] = new Node(t.id(), t.latitude(), t.longitude());
-			relations.add(new LinkedList<Edge>());
-		}
-		
-		System.out.println("Nodes read");
-		
-		for (int i = 0; i < cnt[1]; i++) {
-			
-			FmiEdge t = readEdge(reader, pos);
-			
-			if (t.srcId() < 0 || t.srcId() >= cnt[0]
-					|| t.trgId() < 0 || t.trgId() >= cnt[0]) {
-				throw null;
+				if (t.id() < 0 || t.id() >= cnt[0]) {
+					throw null;
+				}
+
+				if (nodes[t.id()] != null) {
+					throw null;
+				}
+				
+				nodes[t.id()] = new Node(t.id(), t.latitude(), t.longitude());
+				relations.add(new LinkedList<Edge>());
 			}
 			
-			edges[i] = new Edge(nodes[t.srcId()], nodes[t.trgId()], t.cost());
-
-			relations.get(t.srcId()).add(edges[i]);
-		}
-		
-		System.out.println("Edges read");
-		
-		for (int i = 0; i < cnt[0]; i++) {
+			System.out.println("Nodes read");
 			
-			Edge[] e = new Edge[relations.get(i).size()];
-			e = relations.get(i).toArray(e);
+			for (int i = 0; i < cnt[1]; i++) {
+				
+				FmiEdge t = readEdge(reader, pos);
+				
+				if (t.srcId() < 0 || t.srcId() >= cnt[0]
+						|| t.trgId() < 0 || t.trgId() >= cnt[0]) {
+					throw null;
+				}
+				
+				edges[i] = new Edge(nodes[t.srcId()], nodes[t.trgId()], t.cost());
 
-			nodes[i].setEdges(e);
+				relations.get(t.srcId()).add(edges[i]);
+			}
+			
+			System.out.println("Edges read");
+			
+			for (int i = 0; i < cnt[0]; i++) {
+				
+				Edge[] e = new Edge[relations.get(i).size()];
+				e = relations.get(i).toArray(e);
+
+				nodes[i].setEdges(e);
+			}
+			
+			System.out.println("Adjacency graph created");	
+		
+		} catch (Exception e) {
+			
+			System.out.println("Failure while reading input file");
+
+			throw new Exception("Bad input format");
+
+		} finally {
+			
+			reader.close();
 		}
-		
-		System.out.println("Adjacency graph created");
-		
-		reader.close();
 		
 		return nodes;
 	}
