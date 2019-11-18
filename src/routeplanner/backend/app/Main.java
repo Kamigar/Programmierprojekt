@@ -124,6 +124,8 @@ public class Main {
 			long startTime = System.nanoTime();
 
 			Node[] nodes = FileScanner.read(param.in);
+
+			DijkstraNode[] calcNodes = DijkstraNode.createTree(nodes);
 			
 			long endTime = System.nanoTime();
 			
@@ -142,7 +144,7 @@ public class Main {
 
 			startTime = System.nanoTime();
 			
-			Dijkstra.DijkstraStructure struct = Dijkstra.calculate(nodes, param.start);
+			Dijkstra.DijkstraStructure struct = Dijkstra.calculate(calcNodes, param.start);
 			
 			endTime = System.nanoTime();
 			

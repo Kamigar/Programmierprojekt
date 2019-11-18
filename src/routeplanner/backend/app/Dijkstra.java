@@ -11,40 +11,30 @@ public class Dijkstra {
 		public Vector<DijkstraNode> ordered;
 	}
 	
-	public static DijkstraStructure calculate(Node[] structure, int index) {
+	public static DijkstraStructure calculate(DijkstraNode[] nodes, int index) {
 		
-		System.out.println("Create Dijkstra nodes");
-		
-		DijkstraNode[] nodes = new DijkstraNode[structure.length];
+		System.out.println("Prepare data for calculation");
 
-		Vector<Queue.Entry<DijkstraNode>> entries =
-				new Vector<Queue.Entry<DijkstraNode>>(structure.length);
+		Queue<DijkstraNode> nodeList = new Queue<DijkstraNode>(nodes.length);
 
-		for (int i = 0; i < structure.length; i++)
-			entries.add(null);
+		Vector<DijkstraNode> finishedNodes = new Vector<DijkstraNode>(nodes.length);
 		
-		Queue<DijkstraNode> nodeList = new Queue<DijkstraNode>(structure.length);
-
-		Vector<DijkstraNode> finishedNodes = new Vector<DijkstraNode>(structure.length);
-		
-		for (int i = 0; i < structure.length; i++) {
-			nodes[i] = new DijkstraNode(structure[i]);
-		}
-		
-		nodes[index].setDistance(0);
-		entries.set(index, nodeList.insert(nodes[index], 0));
+		DijkstraNode t = nodes[index];
+		t.setDistance(0);
+		t.setEntry(nodeList.insert(t, 0));
 
 		System.out.println("Calculate distances");
 		
 		while (!nodeList.isEmpty()) {
 			
 			DijkstraNode current = nodeList.poll();
+			current.setEntry(null);
 
 			finishedNodes.add(current);
 			
-			for (Edge edge : current.node().edges()) {
+			for (DijkstraEdge edge : current.edges()) {
 				
-				DijkstraNode neighbour = nodes[edge.trg().id()];
+				DijkstraNode neighbour = edge.trg();
 				
 				double newDistance = current.distance() + edge.cost();
 				double oldDistance = neighbour.distance();
@@ -53,15 +43,13 @@ public class Dijkstra {
 					neighbour.setDistance(newDistance);
 					neighbour.setPrevious(current);
 					
-					Queue.Entry<DijkstraNode> entry = entries.get(neighbour.node().id());
-
-					if (entry == null) {
+					if (neighbour.entry() == null) {
 						
-						entries.set(neighbour.node().id(), nodeList.insert(neighbour, neighbour.distance()));
+						neighbour.setEntry(nodeList.insert(neighbour, neighbour.distance()));
 
 					} else {
 						
-						nodeList.decreaseKey(entry, neighbour.distance());
+						nodeList.decreaseKey(neighbour.entry(), neighbour.distance());
 					}
 				}
 			}
