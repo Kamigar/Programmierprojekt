@@ -1,8 +1,8 @@
 package routeplanner.backend.app;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.Vector;
 
@@ -171,12 +171,12 @@ public class FileScanner {
 		return new FmiEdge(srcId, trgId, cost);
 	}
 
-	public static Node[] read(String filename) throws Exception {
+	public static Node[] read(InputStreamReader readerBackend) throws Exception {
 		
 		Node[] nodes = null;
 		Edge[] edges = null;
 		
-		BufferedReader reader = new BufferedReader(new FileReader(filename));
+		BufferedReader reader = new BufferedReader(readerBackend);
 		
 		try {
 
