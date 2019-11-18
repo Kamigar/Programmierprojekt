@@ -171,7 +171,7 @@ public class FileScanner {
 		return new FmiEdge(srcId, trgId, cost);
 	}
 
-	public static Node[] read(InputStreamReader readerBackend) throws Exception {
+	public static Node[] read(InputStreamReader readerBackend, Logger logger) throws Exception {
 		
 		Node[] nodes = null;
 		Edge[] edges = null;
@@ -185,9 +185,9 @@ public class FileScanner {
 			
 			readHeader(cnt, reader, pos);
 			
-			System.out.println("Read header of file:");
-			System.out.println("  " + cnt[0] + " nodes");
-			System.out.println("  " + cnt[1] + " edges");
+			logger.info("Header of file parsed successfully");
+			logger.info("  " + cnt[0] + " nodes");
+			logger.info("  " + cnt[1] + " edges");
 			
 			nodes = new Node[cnt[0]];
 			edges = new Edge[cnt[1]];
@@ -210,7 +210,7 @@ public class FileScanner {
 				relations.add(new LinkedList<Edge>());
 			}
 			
-			System.out.println("Nodes read");
+			logger.info("Nodes parsed");
 			
 			for (int i = 0; i < cnt[1]; i++) {
 				
@@ -226,7 +226,7 @@ public class FileScanner {
 				relations.get(t.srcId()).add(edges[i]);
 			}
 			
-			System.out.println("Edges read");
+			logger.info("Edges parsed");
 			
 			for (int i = 0; i < cnt[0]; i++) {
 				
@@ -236,11 +236,11 @@ public class FileScanner {
 				nodes[i].setEdges(e);
 			}
 			
-			System.out.println("Adjacency graph created");	
+			logger.info("Adjacency graph created");	
 		
 		} catch (Exception e) {
 			
-			System.out.println("Failure while reading input file");
+			logger.error("Failure while reading input file");
 
 			throw new Exception("Bad input format");
 

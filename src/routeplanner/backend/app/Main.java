@@ -24,15 +24,13 @@ public class Main {
 		public OutputStreamWriter out = null;
 		public int start = -1;
 		public int end = -1;
+		public Logger.Level logLevel = null;
 	}
 
 	private static Parameters readParameters(String[] args) throws IOException {
 		
 		Parameters p = new Parameters();
 		
-		p.in = new InputStreamReader(System.in);
-		p.out = new OutputStreamWriter(System.out);
-
 		for (int i = 0; i < args.length; i++) {
 			
 			switch (args[i]) {
@@ -95,6 +93,18 @@ public class Main {
 				p.end = Integer.parseUnsignedInt(args[i]);
 				break;
 				
+			case "--quiet":
+			case "-q":
+				
+				p.logLevel = Logger.Level.ERROR;
+				break;
+				
+			case "--verbose":
+			case "-v":
+				
+				p.logLevel = Logger.Level.INFO;
+				break;
+				
 			default:
 				
 				throw null;
@@ -108,6 +118,24 @@ public class Main {
 			
 			throw null;
 		}
+		
+		if (p.in == null) {
+			
+			p.in = new InputStreamReader(System.in);
+		}
+		
+		if (p.out == null) {
+			
+			p.out = new OutputStreamWriter(System.out);
+
+			if (p.logLevel == null)
+				p.logLevel = Logger.Level.ERROR;
+		}
+		
+		if (p.logLevel == null) {
+			
+			p.logLevel = Logger.defaultLogLevel;
+		}
 
 		return p;
 	}
@@ -117,19 +145,23 @@ public class Main {
 		try {
 			
 			Parameters param = readParameters(args);
-
-
-			System.out.println("Reading file");
 			
+			Logger logger = new Logger(param.logLevel);
+			
+
+			logger.info("Reading file");
+
+
 			long startTime = System.nanoTime();
 
-			Node[] nodes = FileScanner.read(param.in);
+			Node[] nodes = FileScanner.read(param.in, logger);
 
 			DijkstraNode[] calcNodes = DijkstraNode.createTree(nodes);
 			
 			long endTime = System.nanoTime();
 			
-			System.out.println("" + nodes.length + " nodes read in "
+
+			logger.info("" + nodes.length + " nodes read in "
 					+ (double)(endTime - startTime) / 1000000000 + " seconds");
 			
 			
@@ -142,13 +174,15 @@ public class Main {
 			if (param.start < 0 || param.start >= nodes.length)
 				throw null;
 
+
 			startTime = System.nanoTime();
 			
-			Dijkstra.DijkstraStructure struct = Dijkstra.calculate(calcNodes, param.start);
+			Dijkstra.DijkstraStructure struct = Dijkstra.calculate(calcNodes, param.start, logger);
 			
 			endTime = System.nanoTime();
 			
-			System.out.println("Path calculated in "
+
+			logger.info("Path calculated in "
 					+ (double)(endTime - startTime) / 1000000000 + " seconds");
 			
 			
@@ -158,7 +192,7 @@ public class Main {
 
 				for (DijkstraNode node : struct.ordered) {
 
-					System.out.println("Node " + node.node().id()
+					logger.info("Node " + node.node().id()
 							+ " distance " + node.distance());
 				}
 				
@@ -169,7 +203,7 @@ public class Main {
 				if (param.end < 0 || param.end >= nodes.length)
 					throw null;
 
-				System.out.println("Node " + struct.nodes[param.end].node().id()
+				logger.info("Node " + struct.nodes[param.end].node().id()
 						+ " distance " + struct.nodes[param.end].distance());
 				
 				break;

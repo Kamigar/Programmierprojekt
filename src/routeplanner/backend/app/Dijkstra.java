@@ -1,5 +1,6 @@
 package routeplanner.backend.app;
 
+import java.io.IOException;
 import java.util.Vector;
 
 import routeplanner.backend.model.*;
@@ -11,9 +12,9 @@ public class Dijkstra {
 		public Vector<DijkstraNode> ordered;
 	}
 	
-	public static DijkstraStructure calculate(DijkstraNode[] nodes, int index) {
+	public static DijkstraStructure calculate(DijkstraNode[] nodes, int index, Logger logger) throws IOException {
 		
-		System.out.println("Prepare data for calculation");
+		logger.info("Prepare data for calculation");
 
 		Queue<DijkstraNode> nodeList = new Queue<DijkstraNode>(nodes.length);
 
@@ -23,7 +24,7 @@ public class Dijkstra {
 		t.setDistance(0);
 		t.setEntry(nodeList.insert(t, 0));
 
-		System.out.println("Calculate distances");
+		logger.info("Calculate distances");
 		
 		while (!nodeList.isEmpty()) {
 			
@@ -55,7 +56,7 @@ public class Dijkstra {
 			}
 		}
 		
-		System.out.println("Calculation finished");
+		logger.info("Calculation finished");
 		
 		DijkstraStructure r = new DijkstraStructure();
 		r.nodes = nodes;
