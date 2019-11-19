@@ -207,6 +207,12 @@ public class FileScanner {
 				relations.add(new LinkedList<Edge>());
 			}
 			
+			for (Node node : nodes) {
+				
+				if (node == null)
+					throw null;
+			}
+			
 			logger.info("Nodes parsed");
 			
 			for (int i = 0; i < cnt[1]; i++) {
@@ -240,12 +246,8 @@ public class FileScanner {
 			logger.error("Failure while reading input file");
 
 			throw new Exception("Bad input format");
-
-		} finally {
-			
-			//reader.close();
 		}
-		
+
 		return nodes;
 	}
 	
