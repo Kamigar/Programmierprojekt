@@ -1,5 +1,7 @@
 package routeplanner.backend.app;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,20 +12,13 @@ import routeplanner.backend.model.*;
 
 public class Main {
 	
-	private enum Command {
-		
-		ONE_TO_ALL,
-		ONE_TO_ONE,
-		INTERACTIVE
-	}
-	
 	private static class Parameters {
 		
-		public Command command = null;
-		public InputStreamReader in = null;
-		public OutputStreamWriter out = null;
+		public BufferedReader structureIn = null;
+		public BufferedReader requestIn = null;
+		public BufferedWriter requestOut = null;
+		public BufferedWriter logOut = null;
 		public int start = -1;
-		public int end = -1;
 		public Logger.Level logLevel = null;
 	}
 
@@ -42,7 +37,7 @@ public class Main {
 				if (args.length == i)
 					throw null;
 
-				p.in = new FileReader(args[i]);
+				p.structureIn = new BufferedReader(new FileReader(args[i]));
 				break;
 				
 			case "--output-file":
@@ -52,29 +47,31 @@ public class Main {
 				if (args.length == i)
 					throw null;
 				
-				p.out = new FileWriter(args[i]);
+				p.requestOut = new BufferedWriter(new FileWriter(args[i]));
+				break;
+				
+			case "--request-file":
+			case "-req":
+				
+				i++;
+				if (args.length == i)
+					throw null;
+				
+				p.requestIn = new BufferedReader(new FileReader(args[i]));
+				break;
+				
+			case "--log-file":
+			case "-l":
+				
+				i++;
+				if (args.length == i)
+					throw null;
+				
+				p.logOut = new BufferedWriter(new FileWriter(args[i]));
 				break;
 				
 			case "--one-to-all":
 			case "-ota":
-				
-				p.command = Command.ONE_TO_ALL;
-				break;
-				
-			case "--one-to-one":
-			case "-oto":
-				
-				p.command = Command.ONE_TO_ONE;
-				break;
-				
-			case "--interactive":
-			case "-ita":
-				
-				p.command = Command.INTERACTIVE;
-				break;
-				
-			case "--start":
-			case "-s":
 				
 				i++;
 				if (args.length == i)
@@ -82,17 +79,7 @@ public class Main {
 				
 				p.start = Integer.parseUnsignedInt(args[i]);
 				break;
-				
-			case "--end":
-			case "-e":
-				
-				i++;
-				if (args.length == i)
-					throw null;
-				
-				p.end = Integer.parseUnsignedInt(args[i]);
-				break;
-				
+
 			case "--quiet":
 			case "-q":
 				
@@ -105,29 +92,34 @@ public class Main {
 				p.logLevel = Logger.Level.INFO;
 				break;
 				
+			case "--warning":
+			case "-w":
+				
+				p.logLevel = Logger.Level.WARNING;
+				break;
+				
 			default:
 				
 				throw null;
 			}
 		}
 		
-		if (p.command == null
-				|| p.command == Command.INTERACTIVE && (p.start != -1 || p.end != -1)
-				|| p.command == Command.ONE_TO_ALL && (p.start == -1 || p.end != -1)
-				|| p.command == Command.ONE_TO_ONE && (p.start == -1 || p.end == -1)) {
-			
-			throw null;
-		}
+		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+		BufferedWriter stdout = new BufferedWriter(new OutputStreamWriter(System.out));
 		
-		if (p.in == null) {
-			
-			p.in = new InputStreamReader(System.in);
-		}
+		if (p.structureIn == null)
+			p.structureIn = stdin;
 		
-		if (p.out == null) {
-			
-			p.out = new OutputStreamWriter(System.out);
+		if (p.requestIn == null)
+			p.requestIn = stdin;
+		
+		if (p.logOut == null)
+			p.logOut = stdout;
 
+		if (p.requestOut == null) {
+			
+			p.requestOut = stdout;
+			
 			if (p.logLevel == null)
 				p.logLevel = Logger.Level.ERROR;
 		}
@@ -142,11 +134,13 @@ public class Main {
 
 	public static void main(String[] args) {
 
+		Parameters param = null;
+		Logger logger = null;
 		try {
 			
-			Parameters param = readParameters(args);
+			param = readParameters(args);
 			
-			Logger logger = new Logger(param.logLevel);
+			logger = new Logger(param.logLevel, param.logOut);
 			
 
 			logger.info("Reading file");
@@ -154,7 +148,7 @@ public class Main {
 
 			long startTime = System.nanoTime();
 
-			Node[] nodes = FileScanner.read(param.in, logger);
+			Node[] nodes = FileScanner.readStructure(param.structureIn, logger);
 
 			DijkstraNode[] calcNodes = DijkstraNode.createTree(nodes);
 			
@@ -165,63 +159,110 @@ public class Main {
 					+ (double)(endTime - startTime) / 1000000000 + " seconds");
 			
 			
-			if (param.command == Command.INTERACTIVE) {
-				
-				// ToDo: Read input.
-				throw null;
-			}
-			
-			if (param.start < 0 || param.start >= nodes.length)
-				throw null;
+			if (param.start != -1) {
 
-
-			startTime = System.nanoTime();
-			
-			Dijkstra.DijkstraStructure struct = Dijkstra.calculate(calcNodes, param.start, logger);
-			
-			endTime = System.nanoTime();
-			
-
-			logger.info("Path calculated in "
-					+ (double)(endTime - startTime) / 1000000000 + " seconds");
-			
-			
-			switch (param.command) {
-			
-			case ONE_TO_ALL:
-
-				for (DijkstraNode node : struct.ordered) {
-
-					logger.info("Node " + node.node().id()
-							+ " distance " + node.distance());
-				}
-				
-				break;
-				
-			case ONE_TO_ONE:
-				
-				if (param.end < 0 || param.end >= nodes.length)
+				// Calculate one to all
+				if (param.start < 0 || param.start >= calcNodes.length)
 					throw null;
-
-				logger.info("Node " + struct.nodes[param.end].node().id()
-						+ " distance " + struct.nodes[param.end].distance());
 				
-				break;
+				Dijkstra.DijkstraStructure struct = Dijkstra.calculate(
+						calcNodes, calcNodes[param.start], logger);
+				
+				for (DijkstraNode node : struct.ordered) {
+					
+					param.requestOut.write(String.valueOf(node.node().id()));
+					param.requestOut.write(' ');
+					param.requestOut.write(String.valueOf(node.distance()));
+					param.requestOut.newLine();
+				}
 			
-			case INTERACTIVE:
+			} else {
 				
-				throw null;
+				// Read multiple requests
+				logger.info("Input format: [start:id] [end:id] e.g. 18445 12343");
+				logger.info("  use multiple lines for multiple requests");
+				logger.info("  end input with <EOF> (CTRL+D)");	
+
+				int lastRequest = -1;
+				int[] request;
+				
+				request = FileScanner.readRequest(param.requestIn, logger);
+
+				while (request != null) {
+					
+					if (request[0] != lastRequest) {
+						
+						lastRequest = request[0];
+						
+						DijkstraNode.reset(calcNodes);
+
+						if (request[0] < 0 || request[0] >= calcNodes.length)
+							throw null;
+						
+
+						startTime = System.nanoTime();
+						
+						Dijkstra.calculate(
+								calcNodes, calcNodes[request[0]], logger);
+						
+						endTime = System.nanoTime();	
+
+
+						logger.info("Path calculated in "
+								+ (double)(endTime - startTime) / 1000000000 + " seconds");	
+					}
+					
+					if (request[1] < 0 || request[1] >= calcNodes.length)
+						throw null;
+					
+					DijkstraNode dst = calcNodes[request[1]];
+
+					param.requestOut.write(String.valueOf(dst.distance()));
+					param.requestOut.newLine();
+					
+					logger.info("Path:");
+					logger.info(dst.toPath());
+					logger.info("Distance:");
+					logger.info(String.valueOf(dst.distance()));
+					
+					request = FileScanner.readRequest(param.requestIn, logger);
+				}	
 			}
 
-		} catch (IOException e) {
+		} catch (IOException ex) {
 			
 			System.out.println("I/O exception");
 			System.exit(-1);
 
-		} catch (Exception e) {
+		} catch (Exception ex) {
 			
 			System.out.println("General failure");
 			System.exit(-2);
+
+		} finally {
+			
+			try {
+			
+				if (logger != null)
+					logger.flush();
+
+				if (param != null) {
+
+					if (param.structureIn != null)
+						param.structureIn.close();
+					if (param.requestIn != null)
+						param.requestIn.close();
+					if (param.requestOut != null)
+						param.requestOut.close();
+					if (param.logOut != null)
+						param.logOut.close();
+				}
+				
+			} catch (IOException ex) {
+				
+				System.out.println("Error while closing files");
+				System.exit(-3);
+			}
 		}
 	}
 }

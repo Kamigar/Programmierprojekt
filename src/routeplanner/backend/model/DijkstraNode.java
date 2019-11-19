@@ -11,9 +11,7 @@ public class DijkstraNode {
 
 		_node = node;
 		_edges = edges;
-		_previous = null;
-		_distance = Double.POSITIVE_INFINITY;
-		_entry = null;
+		reset();
 	}
 	
 	public Node node() {
@@ -48,6 +46,26 @@ public class DijkstraNode {
 		_entry = entry;
 	}
 	
+	public void reset() {
+		
+		_previous = null;
+		_distance = Double.POSITIVE_INFINITY;
+		_entry = null;
+	}
+	
+	public String toString() {
+		
+		return "[" + _node.id() + "]";
+	}
+
+	public String toPath() {
+		
+		if (_previous == null)
+			return toString();
+		
+		return _previous.toPath() + " -> " + toString();
+	}
+	
 	
 	public static DijkstraNode[] createTree(Node[] nodes) {
 		
@@ -75,6 +93,12 @@ public class DijkstraNode {
 		}
 		
 		return result;
+	}
+	
+	public static void reset(DijkstraNode[] nodes) {
+		
+		for (DijkstraNode node : nodes)
+			node.reset();
 	}
 
 

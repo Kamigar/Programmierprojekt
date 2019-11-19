@@ -2,7 +2,6 @@ package routeplanner.backend.app;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.Vector;
 
@@ -171,12 +170,10 @@ public class FileScanner {
 		return new FmiEdge(srcId, trgId, cost);
 	}
 
-	public static Node[] read(InputStreamReader readerBackend, Logger logger) throws Exception {
+	public static Node[] readStructure(BufferedReader reader, Logger logger) throws Exception {
 		
 		Node[] nodes = null;
 		Edge[] edges = null;
-		
-		BufferedReader reader = new BufferedReader(readerBackend);
 		
 		try {
 
@@ -246,9 +243,38 @@ public class FileScanner {
 
 		} finally {
 			
-			reader.close();
+			//reader.close();
 		}
 		
 		return nodes;
+	}
+	
+	public static int[] readRequest(BufferedReader reader, Logger logger) throws IOException {
+		
+		StringPosition pos = new StringPosition();
+		
+		getNextRelevantLine(pos, reader);
+		
+		if (pos.string == null) {
+			
+			return null;
+		
+		} else {
+			
+			int end = skipInteger(pos.string, pos.index);
+			int srcId = Integer.parseUnsignedInt(pos.string.substring(pos.index, end));
+			
+			pos.index = skipWhitespace(pos.string, end);
+			
+			end = skipInteger(pos.string, pos.index);
+			int trgId = Integer.parseUnsignedInt(pos.string.substring(pos.index, end));
+			
+			end = skipWhitespace(pos.string, end);
+			if (end < pos.string.length()) {
+				throw null;
+			}
+			
+			return new int[] { srcId, trgId };
+		}
 	}
 }

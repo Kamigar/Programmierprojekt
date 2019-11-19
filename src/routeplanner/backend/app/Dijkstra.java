@@ -12,7 +12,7 @@ public class Dijkstra {
 		public Vector<DijkstraNode> ordered;
 	}
 	
-	public static DijkstraStructure calculate(DijkstraNode[] nodes, int index, Logger logger) throws IOException {
+	public static DijkstraStructure calculate(DijkstraNode[] nodes, DijkstraNode start, Logger logger) throws IOException {
 		
 		logger.info("Prepare data for calculation");
 
@@ -20,9 +20,8 @@ public class Dijkstra {
 
 		Vector<DijkstraNode> finishedNodes = new Vector<DijkstraNode>(nodes.length);
 		
-		DijkstraNode t = nodes[index];
-		t.setDistance(0);
-		t.setEntry(nodeList.insert(t, 0));
+		start.setDistance(0);
+		start.setEntry(nodeList.insert(start, 0));
 
 		logger.info("Calculate distances");
 		
