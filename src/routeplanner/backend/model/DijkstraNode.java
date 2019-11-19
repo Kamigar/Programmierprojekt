@@ -83,10 +83,9 @@ public class DijkstraNode {
 			for (int j = 0; j < edges.length; j++) {
 				
 				Edge edge = edges[j];
-				DijkstraNode src = result[i];
 				DijkstraNode trg = result[edge.trg().id()];
 				
-				newEdges[j] = new DijkstraEdge(edge, src, trg);
+				newEdges[j] = new DijkstraEdge(edge, trg);
 			}
 
 			result[i]._edges = newEdges;
