@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Created-By: lyeb (Luis Morgenstern)
+Main-Class: routeplanner.backend.app.Main
+
