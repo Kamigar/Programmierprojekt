@@ -1,0 +1,5 @@
+
+bin/*
+!bin/build.sh
+!bin/manifest.mf
+
