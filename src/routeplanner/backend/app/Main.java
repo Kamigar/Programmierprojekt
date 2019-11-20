@@ -33,6 +33,11 @@ public class Main {
 
 	private static class FatalFailure extends Exception {
 		
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 988623077434694182L;
+
 		public FatalFailure(Code code, String message) {
 			super(message);
 			_code = code;
@@ -47,6 +52,11 @@ public class Main {
 	
 	private static class BadParameterException extends Exception {
 		
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -6297306542282662293L;
+
 		public BadParameterException(String detail) { super(detail); }
 	}
 

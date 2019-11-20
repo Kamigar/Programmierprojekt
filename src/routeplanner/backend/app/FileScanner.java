@@ -11,21 +11,41 @@ public class FileScanner {
 	
 	public static class BadHeaderException extends Exception {
 		
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1926680537412845559L;
+
 		public BadHeaderException(String reason) { super(reason); }
 	}
 	
 	public static class BadNodeException extends Exception {
 		
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1378424271026452872L;
+
 		public BadNodeException(String reason) { super(reason); }
 	}
 	
 	public static class BadEdgeException extends Exception {
 		
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -1460975851840457803L;
+
 		public BadEdgeException(String reason) { super(reason); }
 	}
 	
 	public static class BadRequestException extends Exception {
 		
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 4575260669648696900L;
+
 		public BadRequestException(String reason) { super(reason); }
 	}
 	
