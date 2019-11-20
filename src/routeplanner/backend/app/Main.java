@@ -8,10 +8,48 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
+import routeplanner.backend.app.FileScanner;
 import routeplanner.backend.model.*;
 
 public class Main {
 	
+	public enum Code {
+		
+		UNHANDLED_EXCEPTION(-99),
+		IO_EXCEPTION(-1),
+		
+		BAD_PARAMETER(-2),
+		BAD_HEADER(-3),
+		BAD_NODE(-4),
+		BAD_EDGE(-5),
+		BAD_REQUEST(-6);
+		
+		private Code(int value) { _value = value; }
+		
+		public int value() { return _value; }
+		
+		private int _value;
+	}	
+
+	private static class FatalFailure extends Exception {
+		
+		public FatalFailure(Code code, String message) {
+			super(message);
+			_code = code;
+		}
+		
+		public Code code() {
+			return _code;
+		}
+		
+		private Code _code;
+	}
+	
+	private static class BadParameterException extends Exception {
+		
+		public BadParameterException(String detail) { super(detail); }
+	}
+
 	private static class Parameters {
 		
 		public BufferedReader structureIn = null;
@@ -20,9 +58,12 @@ public class Main {
 		public BufferedWriter logOut = null;
 		public int start = -1;
 		public Logger.Level logLevel = null;
+		public boolean isTolerant = false;
 	}
+	
 
-	private static Parameters readParameters(String[] args) throws IOException {
+	private static Parameters readParameters(String[] args)
+			throws BadParameterException, IOException {
 		
 		Parameters p = new Parameters();
 		
@@ -35,7 +76,7 @@ public class Main {
 				
 				i++;
 				if (args.length == i)
-					throw null;
+					throw new BadParameterException("No input file provided");
 
 				p.structureIn = new BufferedReader(new FileReader(args[i]));
 				break;
@@ -45,7 +86,7 @@ public class Main {
 				
 				i++;
 				if (args.length == i)
-					throw null;
+					throw new BadParameterException("No output file provided");
 				
 				p.requestOut = new BufferedWriter(new FileWriter(args[i]));
 				break;
@@ -55,7 +96,7 @@ public class Main {
 				
 				i++;
 				if (args.length == i)
-					throw null;
+					throw new BadParameterException("No request file provided");
 				
 				p.requestIn = new BufferedReader(new FileReader(args[i]));
 				break;
@@ -65,7 +106,7 @@ public class Main {
 				
 				i++;
 				if (args.length == i)
-					throw null;
+					throw new BadParameterException("No log file provided");
 				
 				p.logOut = new BufferedWriter(new FileWriter(args[i]));
 				break;
@@ -75,9 +116,15 @@ public class Main {
 				
 				i++;
 				if (args.length == i)
-					throw null;
+					throw new BadParameterException("No start point for one-to-all provided");
 				
 				p.start = Integer.parseUnsignedInt(args[i]);
+				break;
+				
+			case "--tolerant":
+			case "-t":
+				
+				p.isTolerant = true;
 				break;
 
 			case "--quiet":
@@ -100,7 +147,7 @@ public class Main {
 				
 			default:
 				
-				throw null;
+				throw new BadParameterException("Unknown parameter");
 			}
 		}
 		
@@ -138,32 +185,71 @@ public class Main {
 		Logger logger = null;
 		try {
 			
-			param = readParameters(args);
+			try {
+			
+				param = readParameters(args);
+				
+			} catch (BadParameterException ex) {
+				
+				System.out.println("Bad parameter provided");
+				System.out.println(ex.getMessage());
+				
+				throw new FatalFailure(Code.BAD_PARAMETER, "Bad parameter provided");
+			}
 			
 			logger = new Logger(param.logLevel, param.logOut);
 			
+			Node[] nodes = null;
+			DijkstraNode[] calcNodes = null;
+			long startTime, endTime;
 
-			logger.info("Reading file");
+			logger.info("Reading graph");
 
+			try {
 
-			long startTime = System.nanoTime();
+				startTime = System.nanoTime();
 
-			Node[] nodes = FileScanner.readStructure(param.structureIn, logger);
+				nodes = FileScanner.readStructure(param.structureIn, logger, param.isTolerant);
 
-			DijkstraNode[] calcNodes = DijkstraNode.createTree(nodes);
-			
-			long endTime = System.nanoTime();
-			
+				calcNodes = DijkstraNode.createTree(nodes);
+				
+				endTime = System.nanoTime();	
 
-			logger.info("" + nodes.length + " nodes read in "
-					+ (double)(endTime - startTime) / 1000000000 + " seconds");
+			} catch (FileScanner.BadHeaderException ex) {
+				
+				logger.error("Bad header provided");
+				logger.info(ex.getMessage());
+				
+				throw new FatalFailure(Code.BAD_HEADER, "Bad header provided");
+
+			} catch (FileScanner.BadNodeException ex) {
+				
+				logger.error("Bad node provided");
+				logger.info(ex.getMessage());
+				
+				throw new FatalFailure(Code.BAD_NODE, "Bad node provided");
+
+			} catch (FileScanner.BadEdgeException ex) {
+				
+				logger.error("Bad edge provided");
+				logger.info(ex.getMessage());
+				
+				throw new FatalFailure(Code.BAD_EDGE, "Bad edge provided");
+			}
+
+			logger.info(System.lineSeparator() + nodes.length + " nodes read in "
+					+ (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());
 			
 			
 			if (param.start != -1) {
 
 				// Calculate one to all
-				if (param.start < 0 || param.start >= calcNodes.length)
-					throw null;
+				if (param.start < 0 || param.start >= calcNodes.length) {
+					
+					logger.error("nodeID of starting point out of range");
+					
+					throw new FatalFailure(Code.BAD_PARAMETER, "OTA nodeID out of range");
+				}
 				
 				Dijkstra.DijkstraStructure struct = Dijkstra.calculate(
 						calcNodes, calcNodes[param.start], logger);
@@ -184,37 +270,48 @@ public class Main {
 				logger.info("  end input with <EOF> (CTRL+D)");	
 
 				int lastRequest = -1;
-				int[] request;
-				
-				request = FileScanner.readRequest(param.requestIn, logger);
+				while (true) {
 
-				while (request != null) {
+					int[] request;
+					try {
+						
+						logger.info(""); // Print new line
+
+						request = FileScanner.readRequest(param.requestIn, calcNodes.length, logger, param.isTolerant);
+						
+					} catch (FileScanner.BadRequestException ex) {
+						
+						logger.error("Bad request provided");
+						logger.info(ex.getMessage());
 					
+						throw new FatalFailure(Code.BAD_REQUEST, "Bad request provided");
+					}	
+					
+					// Note: No 'while (request != null) {...}' loop used
+					//   to prevent code duplication of 'FileScanner.readRequest(...)'
+					if (request == null)
+						break;
+
 					if (request[0] != lastRequest) {
 						
 						lastRequest = request[0];
 						
 						DijkstraNode.reset(calcNodes);
 
-						if (request[0] < 0 || request[0] >= calcNodes.length)
-							throw null;
-						
 
 						startTime = System.nanoTime();
 						
 						Dijkstra.calculate(
-								calcNodes, calcNodes[request[0]], logger);
+								calcNodes, calcNodes[lastRequest], logger);
 						
 						endTime = System.nanoTime();	
 
 
-						logger.info("Path calculated in "
+						logger.info(System.lineSeparator() + "Path calculated in "
 								+ (double)(endTime - startTime) / 1000000000 + " seconds");	
 					}
 					
-					if (request[1] < 0 || request[1] >= calcNodes.length)
-						throw null;
-					
+
 					DijkstraNode dst = calcNodes[request[1]];
 
 					param.requestOut.write(String.valueOf(dst.distance()));
@@ -224,20 +321,29 @@ public class Main {
 					logger.info(dst.toPath());
 					logger.info("Distance:");
 					logger.info(String.valueOf(dst.distance()));
-					
-					request = FileScanner.readRequest(param.requestIn, logger);
 				}	
 			}
 
+		} catch (FatalFailure failure) {
+			
+			System.out.println(System.lineSeparator() + "Fatal failure in program execution");
+			System.out.println("  " + failure.getMessage());
+			
+			System.exit(failure.code().value());
+
 		} catch (IOException ex) {
 			
-			System.out.println("I/O exception");
-			System.exit(-1);
+			System.out.println(System.lineSeparator() + "I/O exception");
+			System.out.println("  " + ex.getMessage());
+
+			System.exit(Code.IO_EXCEPTION.value());
 
 		} catch (Exception ex) {
 			
-			System.out.println("General failure");
-			System.exit(-2);
+			System.out.println(System.lineSeparator() + "Unhandled exception occured");
+			System.out.println(ex.getStackTrace());
+
+			System.exit(Code.UNHANDLED_EXCEPTION.value());
 
 		} finally {
 			
@@ -261,7 +367,8 @@ public class Main {
 			} catch (IOException ex) {
 				
 				System.out.println("Error while closing files");
-				System.exit(-3);
+				System.out.println("  " + ex.getMessage());
+				System.exit(Code.IO_EXCEPTION.value());
 			}
 		}
 	}
