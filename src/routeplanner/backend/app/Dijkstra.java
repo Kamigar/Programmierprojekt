@@ -14,7 +14,7 @@ public class Dijkstra {
 	
 	public static DijkstraStructure calculate(DijkstraNode[] nodes, DijkstraNode start, Logger logger) throws IOException {
 		
-		logger.info("Prepare data for calculation");
+		logger.info(System.lineSeparator() + "Prepare data for calculation");
 
 		Queue<DijkstraNode> nodeList = new Queue<DijkstraNode>(nodes.length);
 

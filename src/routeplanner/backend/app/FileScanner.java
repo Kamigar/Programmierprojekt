@@ -50,7 +50,7 @@ public class FileScanner {
 	}
 	
 	
-	private static class StringPosition {
+	static class StringPosition {
 		String string = null;
 		int index = -1;
 	}
@@ -161,8 +161,6 @@ public class FileScanner {
 		
 		try {
 
-			logger.info("Reading node");
-			
 			getNextRelevantLine(pos, reader);
 			if (pos.string == null)
 				throw new BadNodeException("Unexpected end of file");
@@ -243,8 +241,6 @@ public class FileScanner {
 				throws BadEdgeException, IOException {
 		
 		try {
-
-			logger.info("Reading edge");
 
 			getNextRelevantLine(pos, reader);
 			if (pos.string == null)
@@ -329,11 +325,10 @@ public class FileScanner {
 		
 		readHeader(cnt, reader, pos, logger, isTolerant);
 		
-		logger.info("Header of file parsed successfully");
-		logger.info("  " + cnt[0] + " nodes");
-		logger.info("  " + cnt[1] + " edges" + System.lineSeparator());
-		
-		logger.info("Reading nodes. Input format: [nodeID] [nodeID2] [latitude] [longitude] [elevation]");
+		logger.info("Header of file parsed successfully" + System.lineSeparator()
+			+ "  " + cnt[0] + " nodes" + System.lineSeparator()
+			+ "  " + cnt[1] + " edges" + System.lineSeparator() + System.lineSeparator()
+			+ "Reading nodes. Input format: [nodeID] [nodeID2] [latitude] [longitude] [elevation]");
 		
 		Node[] nodes = new Node[cnt[0]];
 		Edge[] edges = new Edge[cnt[1]];
@@ -342,22 +337,17 @@ public class FileScanner {
 		
 		for (int i = 0; i < cnt[0]; i++) {
 			
-			logger.info(""); // Print new line
-			
 			FmiNode t = readNode(reader, pos, nodes, logger, isTolerant);
 
 			nodes[t.id()] = new Node(t.id(), t.latitude(), t.longitude());
 			relations.add(new LinkedList<Edge>());
 		}
 		
-		logger.info("Nodes parsed" + System.lineSeparator());
-
-		logger.info("Reading edges. Input format: [srcID] [trgID] [cost] [type] [maxspeed]");
+		logger.info("Nodes parsed" + System.lineSeparator() + System.lineSeparator()
+			+ "Reading edges. Input format: [srcID] [trgID] [cost] [type] [maxspeed]");
 		
 		for (int i = 0; i < cnt[1]; i++) {
 			
-			logger.info(""); // Print new line
-
 			FmiEdge t = readEdge(reader, pos, nodes, logger, isTolerant);
 			
 			edges[i] = new Edge(nodes[t.srcId()], nodes[t.trgId()], t.cost());
@@ -380,15 +370,12 @@ public class FileScanner {
 		return nodes;
 	}
 	
-	public static int[] readRequest(BufferedReader reader, int maxId, Logger logger, boolean isTolerant)
+	public static int[] readRequest(BufferedReader reader, StringPosition pos,
+			int maxId, Logger logger, boolean isTolerant)
 				throws BadRequestException, IOException {
 		
 		try {
 			
-			logger.info("Reading request");
-
-			StringPosition pos = new StringPosition();
-
 			getNextRelevantLine(pos, reader);
 
 			if (pos.string == null)
@@ -431,7 +418,7 @@ public class FileScanner {
 				logger.warning(System.lineSeparator() + ex.getMessage());
 				logger.warning("Error in request. Try again...");
 				
-				return readRequest(reader, maxId, logger, isTolerant);
+				return readRequest(reader, pos, maxId, logger, isTolerant);
 				
 			} else {
 				

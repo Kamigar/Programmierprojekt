@@ -226,7 +226,7 @@ public class Main {
 			DijkstraNode[] calcNodes = null;
 			long startTime, endTime;
 
-			logger.info("Reading graph");
+			logger.info(System.lineSeparator() + "Reading graph" + System.lineSeparator());
 
 			try {
 
@@ -261,7 +261,7 @@ public class Main {
 			}
 
 			logger.info(System.lineSeparator() + nodes.length + " nodes read in "
-					+ (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());
+					+ (double)(endTime - startTime) / 1000000000 + " seconds");
 			
 			
 			if (param.start != -1) {
@@ -274,9 +274,18 @@ public class Main {
 					throw new FatalFailure(Code.BAD_PARAMETER, "OTA nodeID out of range");
 				}
 				
+
+				startTime = System.nanoTime();
+
 				Dijkstra.DijkstraStructure struct = Dijkstra.calculate(
 						calcNodes, calcNodes[param.start], logger);
-				
+
+				endTime = System.nanoTime();	
+
+
+				logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator()
+						+ System.lineSeparator() + "Distances: [trgID] [distance]");
+
 				for (DijkstraNode node : struct.ordered) {
 					
 					param.requestOut.write(String.valueOf(node.node().id()));
@@ -288,19 +297,19 @@ public class Main {
 			} else {
 				
 				// Read multiple requests
-				logger.info("Input format: [start:id] [end:id] e.g. 18445 12343");
-				logger.info("  use multiple lines for multiple requests");
-				logger.info("  end input with <EOF> (CTRL+D)");	
+				logger.info(System.lineSeparator()
+					+ "Input format: [start:id] [end:id] e.g. 18445 12343" + System.lineSeparator()
+					+ "  use multiple lines for multiple requests" + System.lineSeparator()
+					+ "  end input with <EOF> (CTRL+D)");
 
+				FileScanner.StringPosition pos = new FileScanner.StringPosition();
 				int lastRequest = -1;
 				while (true) {
 
 					int[] request;
 					try {
 						
-						logger.info(""); // Print new line
-
-						request = FileScanner.readRequest(param.requestIn, calcNodes.length, logger, param.isTolerant);
+						request = FileScanner.readRequest(param.requestIn, pos, calcNodes.length, logger, param.isTolerant);
 						
 					} catch (FileScanner.BadRequestException ex) {
 						
@@ -330,8 +339,7 @@ public class Main {
 						endTime = System.nanoTime();	
 
 
-						logger.info(System.lineSeparator() + "Path calculated in "
-								+ (double)(endTime - startTime) / 1000000000 + " seconds");	
+						logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds");	
 					}
 					
 
@@ -340,10 +348,8 @@ public class Main {
 					param.requestOut.write(String.valueOf(dst.distance()));
 					param.requestOut.newLine();
 					
-					logger.info("Path:");
-					logger.info(dst.toPath());
-					logger.info("Distance:");
-					logger.info(String.valueOf(dst.distance()));
+					logger.info("Path:" + System.lineSeparator() + dst.toPath() + System.lineSeparator()
+							+ "Distance:" + System.lineSeparator() + String.valueOf(dst.distance()) + System.lineSeparator());
 				}	
 			}
 
