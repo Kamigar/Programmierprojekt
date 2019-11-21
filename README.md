@@ -13,10 +13,10 @@ The program operates on 2 input (default: `stdin`) and 2 output (default: `stdou
 
 OPTION | Explanation
 -|-
-`-i, --input-file <file><br>  [default: stdin]` | Description of the graph structure<br>Input format: `[total number of nodes]<br>[total number of edges]<br>FOR EACH NODE:<br>  [nodeID] [nodeID2] [latitude] [longitude] [elevation]<br>FOR EACH EDGE:<br>  [srcID] [trgID] [cost] [type] [maxspeed]`
-`-r, --request-file <file><br>  [default: stdin]` | List of distances to calculate<br>Input format: `FOR EACH ROUTE:<br>  [srcID] [trgID]`
-`-o, --output-file <file><br>  [default: stdout]` | Output of the calculated distances<br>Output format: `FOR EACH ROUTE:<br>  [cost]`
-`-l, --log-file <file><br>  [default: stdout]` | Log output of the program
+`-i, --input-file <file>`<br>&nbsp;&nbsp;`[default: stdin]` | Description of the graph structure<br>Input format:<br>`[total number of nodes]`<br>`[total number of edges]`<br>`FOR EACH NODE:`<br>&nbsp;&nbsp;`[nodeID] [nodeID2] [latitude] [longitude] [elevation]`<br>`FOR EACH EDGE:`<br>&nbsp;&nbsp;`[srcID] [trgID] [cost] [type] [maxspeed]`
+`-r, --request-file <file>`<br>&nbsp;&nbsp;`[default: stdin]` | List of distances to calculate<br>Input format:<br>`FOR EACH ROUTE:`<br>&nbsp;&nbsp;`[srcID] [trgID]`
+`-o, --output-file <file>`<br>&nbsp;&nbsp;`[default: stdout]` | Output of the calculated distances<br>Output format:<br>`FOR EACH ROUTE:`<br>&nbsp;&nbsp;`[cost]`
+`-l, --log-file <file>`<br>&nbsp;&nbsp;`[default: stdout]` | Log output of the program
 
 Also there is the option to start a single one-to-all calculation.
 
@@ -44,20 +44,24 @@ OPTION | Explanation
 
 For interactive use of the program, the options `-v` and `-t` are very useful.
 
-**Only user input:**
-```routeplanner -v -t```
+&nbsp;&nbsp;**Only user input:**
 
-**Graph structure from file, distance request from user:**
-```routeplanner -v -t -i graph.fmi```
+&nbsp;&nbsp;```routeplanner -v -t```
+
+&nbsp;&nbsp;**Graph structure from file, distance request from user:**
+
+&nbsp;&nbsp;```routeplanner -v -t -i graph.fmi```
 
 
 #### Working with pipes:
 
 Because the default input/output streams are `stdin`/`stdout`, the program could be used with UNIX pipes.
 
-**Read graph and requests from different files and write distances to a third file with pipes:**
-```(cat graph.fmi; cat requests.que) | routeplanner > distances.ist```
+&nbsp;&nbsp;**Read graph and requests from different files and write distances to a third file with pipes:**
 
-**Read graph and requests from different files and print only the calculation time:**
-```(cat graph.fmi; cat requests.que) | routeplanner -v | grep seconds```
+&nbsp;&nbsp;```(cat graph.fmi; cat requests.que) | routeplanner > distances.ist```
+
+&nbsp;&nbsp;**Read graph and requests from different files and print only the calculation time:**
+
+&nbsp;&nbsp;```(cat graph.fmi; cat requests.que) | routeplanner -v | grep seconds```
 
