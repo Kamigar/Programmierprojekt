@@ -2,6 +2,7 @@ package routeplanner.backend.app;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -14,6 +15,8 @@ import routeplanner.backend.model.*;
 public class Main {
 	
 	public enum Code {
+
+		SUCCESS(0),
 		
 		UNHANDLED_EXCEPTION(-99),
 		IO_EXCEPTION(-1),
@@ -102,7 +105,7 @@ public class Main {
 				break;
 				
 			case "--request-file":
-			case "-req":
+			case "-r":
 				
 				i++;
 				if (args.length == i)
@@ -154,10 +157,20 @@ public class Main {
 				
 				p.logLevel = Logger.Level.WARNING;
 				break;
+
+			case "--help":
+			case "-h":
+
+				FileInputStream reader = new FileInputStream("etc/help.txt");
+				byte[] data = reader.readAllBytes();
 				
+				System.out.print(new String(data, "UTF-8"));
+
+				System.exit(Code.SUCCESS.value());
+
 			default:
 				
-				throw new BadParameterException("Unknown parameter");
+				throw new BadParameterException("Unknown parameter. Use -h for help");
 			}
 		}
 		
@@ -178,7 +191,7 @@ public class Main {
 			p.requestOut = stdout;
 			
 			if (p.logLevel == null)
-				p.logLevel = Logger.Level.ERROR;
+				p.logLevel = Logger.defaultStdOutLogLevel;
 		}
 		
 		if (p.logLevel == null) {
@@ -381,5 +394,7 @@ public class Main {
 				System.exit(Code.IO_EXCEPTION.value());
 			}
 		}
+
+		System.exit(Code.SUCCESS.value());
 	}
 }

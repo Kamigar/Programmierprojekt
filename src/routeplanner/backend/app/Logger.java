@@ -14,6 +14,7 @@ public class Logger {
 	}
 	
 	public static Level defaultLogLevel = Level.WARNING;
+	public static Level defaultStdOutLogLevel = Level.ERROR;
 	
 	
 	public Logger() {
