@@ -3,11 +3,14 @@ package routeplanner.backend.app;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
 
 import routeplanner.backend.app.FileScanner;
 import routeplanner.backend.model.*;
@@ -80,6 +83,9 @@ public class Main {
 		
 		Parameters p = new Parameters();
 		
+		String structureIn = null, requestIn = null;
+		String requestOut = null, logOut = null;
+		
 		for (int i = 0; i < args.length; i++) {
 			
 			switch (args[i]) {
@@ -91,7 +97,7 @@ public class Main {
 				if (args.length == i)
 					throw new BadParameterException("No input file provided");
 
-				p.structureIn = new BufferedReader(new FileReader(args[i]));
+				structureIn = args[i];
 				break;
 				
 			case "--output-file":
@@ -101,7 +107,7 @@ public class Main {
 				if (args.length == i)
 					throw new BadParameterException("No output file provided");
 				
-				p.requestOut = new BufferedWriter(new FileWriter(args[i]));
+				requestOut = args[i];
 				break;
 				
 			case "--request-file":
@@ -111,7 +117,7 @@ public class Main {
 				if (args.length == i)
 					throw new BadParameterException("No request file provided");
 				
-				p.requestIn = new BufferedReader(new FileReader(args[i]));
+				requestIn = args[i];
 				break;
 				
 			case "--log-file":
@@ -121,7 +127,7 @@ public class Main {
 				if (args.length == i)
 					throw new BadParameterException("No log file provided");
 				
-				p.logOut = new BufferedWriter(new FileWriter(args[i]));
+				logOut = args[i];
 				break;
 				
 			case "--one-to-all":
@@ -131,7 +137,11 @@ public class Main {
 				if (args.length == i)
 					throw new BadParameterException("No start point for one-to-all provided");
 				
-				p.start = Integer.parseUnsignedInt(args[i]);
+				try {
+					p.start = Integer.parseUnsignedInt(args[i]);
+				} catch (NumberFormatException ex) {
+					throw new BadParameterException("Bad start point for one-to-all provided");
+				}
 				break;
 				
 			case "--tolerant":
@@ -161,6 +171,7 @@ public class Main {
 			case "--help":
 			case "-h":
 
+				// Note: Assuming 'etc/help.txt' is accessible
 				FileInputStream reader = new FileInputStream("etc/help.txt");
 				byte[] data = reader.readAllBytes();
 				
@@ -174,29 +185,57 @@ public class Main {
 			}
 		}
 		
-		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-		BufferedWriter stdout = new BufferedWriter(new OutputStreamWriter(System.out));
-		
-		if (p.structureIn == null)
-			p.structureIn = stdin;
-		
-		if (p.requestIn == null)
-			p.requestIn = stdin;
-		
-		if (p.logOut == null)
-			p.logOut = stdout;
-
-		if (p.requestOut == null) {
+		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
+		BufferedWriter stdout = new BufferedWriter(new OutputStreamWriter(System.out, "UTF-8"));
+					
+		try {
 			
-			p.requestOut = stdout;
+			if (structureIn == null)
+				p.structureIn = stdin;
+			else
+				p.structureIn = new BufferedReader(new InputStreamReader(new FileInputStream(structureIn), "UTF-8"));
 			
-			if (p.logLevel == null)
-				p.logLevel = Logger.defaultStdOutLogLevel;
+			if (requestIn == null)
+				p.requestIn = stdin;
+			else
+				if (structureIn != null && Files.isSameFile(Paths.get(requestIn), Paths.get(structureIn)))
+					p.requestIn = p.structureIn;
+				else
+					p.requestIn = new BufferedReader(new InputStreamReader(new FileInputStream(requestIn), "UTF-8"));
+			
+			if (requestOut == null)
+				p.requestOut = stdout;
+			else
+				p.requestOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(requestOut), "UTF-8"));
+			
+			if (logOut == null)
+				p.logOut = stdout;
+			else
+				if (requestOut != null && Files.isSameFile(Paths.get(logOut), Paths.get(requestOut)))
+					p.logOut = p.requestOut;
+				else
+					p.logOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(requestOut), "UTF-8"));	
+		
+		} catch (FileNotFoundException ex) {
+			
+			throw new BadParameterException("File not found");
+			
+		} catch (InvalidPathException ex) {
+			
+			throw new BadParameterException("Invalid path provided");
+			
+		} catch (SecurityException ex) {
+			
+			throw new BadParameterException("Security exception while opening file");
 		}
 		
+
 		if (p.logLevel == null) {
 			
-			p.logLevel = Logger.defaultLogLevel;
+			if (p.requestOut == p.logOut)
+				p.logLevel = Logger.defaultSameOutputLogLevel;
+			else
+				p.logLevel = Logger.defaultLogLevel;
 		}
 
 		return p;

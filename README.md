@@ -24,7 +24,7 @@ OPTION | Explanation
 -|-
 `-ota, --one-to-all <srcID>` | Calculate all distances from start point `<srcID>`
 
-The log verbosity defaults to `--warning` (`--quiet` if `--output-file` is set to `stdout`).
+The log verbosity defaults to `--warning` (`--quiet` if `--output-file` is same as `--log-file`).
 
 OPTION | Explanation
 -|-
