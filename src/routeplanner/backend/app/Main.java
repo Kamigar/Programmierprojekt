@@ -288,19 +288,21 @@ public class Main {
 
 				for (DijkstraNode node : struct.ordered) {
 					
-					param.requestOut.write(String.valueOf(node.node().id()));
-					param.requestOut.write(' ');
-					param.requestOut.write(String.valueOf(node.distance()));
+					String line = String.valueOf(node.node().id()) + ' ' + ParseUtilities.doubleToString(node.distance());
+					
+					param.requestOut.write(line);
 					param.requestOut.newLine();
+
+					logger.info(line);
 				}
 			
 			} else {
 				
 				// Read multiple requests
 				logger.info(System.lineSeparator()
-					+ "Input format: [start:id] [end:id] e.g. 18445 12343" + System.lineSeparator()
+					+ "Input format: [srcID] [trgID] e.g. 18445 12343" + System.lineSeparator()
 					+ "  use multiple lines for multiple requests" + System.lineSeparator()
-					+ "  end input with <EOF> (CTRL+D)");
+					+ "  end input with <EOF> (CTRL+D)" + System.lineSeparator());
 
 				FileScanner.StringPosition pos = new FileScanner.StringPosition();
 				int lastRequest = -1;
@@ -339,17 +341,18 @@ public class Main {
 						endTime = System.nanoTime();	
 
 
-						logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds");	
+						logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());	
 					}
 					
 
 					DijkstraNode dst = calcNodes[request[1]];
 
-					param.requestOut.write(String.valueOf(dst.distance()));
+					String distance = ParseUtilities.doubleToString(dst.distance());
+
+					param.requestOut.write(distance);
 					param.requestOut.newLine();
-					
-					logger.info("Path:" + System.lineSeparator() + dst.toPath() + System.lineSeparator()
-							+ "Distance:" + System.lineSeparator() + String.valueOf(dst.distance()) + System.lineSeparator());
+
+					logger.info("Distance: " + distance + System.lineSeparator());
 				}	
 			}
 
