@@ -2,7 +2,9 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(dir $(mkfile_path))
 
-all:
+all: bin/routeplanner.jar
+
+bin/routeplanner.jar: $(shell find $(current_dir)src -name "*.java")
 	$(current_dir)bin/build.sh
 
 clean:
