@@ -2,11 +2,15 @@ package routeplanner.backend.app;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
 
 import routeplanner.backend.app.FileScanner;
 import routeplanner.backend.model.*;
@@ -14,6 +18,8 @@ import routeplanner.backend.model.*;
 public class Main {
 	
 	public enum Code {
+
+		SUCCESS(0),
 		
 		UNHANDLED_EXCEPTION(-99),
 		IO_EXCEPTION(-1),
@@ -77,6 +83,9 @@ public class Main {
 		
 		Parameters p = new Parameters();
 		
+		String structureIn = null, requestIn = null;
+		String requestOut = null, logOut = null;
+		
 		for (int i = 0; i < args.length; i++) {
 			
 			switch (args[i]) {
@@ -88,7 +97,7 @@ public class Main {
 				if (args.length == i)
 					throw new BadParameterException("No input file provided");
 
-				p.structureIn = new BufferedReader(new FileReader(args[i]));
+				structureIn = args[i];
 				break;
 				
 			case "--output-file":
@@ -98,17 +107,17 @@ public class Main {
 				if (args.length == i)
 					throw new BadParameterException("No output file provided");
 				
-				p.requestOut = new BufferedWriter(new FileWriter(args[i]));
+				requestOut = args[i];
 				break;
 				
 			case "--request-file":
-			case "-req":
+			case "-r":
 				
 				i++;
 				if (args.length == i)
 					throw new BadParameterException("No request file provided");
 				
-				p.requestIn = new BufferedReader(new FileReader(args[i]));
+				requestIn = args[i];
 				break;
 				
 			case "--log-file":
@@ -118,7 +127,7 @@ public class Main {
 				if (args.length == i)
 					throw new BadParameterException("No log file provided");
 				
-				p.logOut = new BufferedWriter(new FileWriter(args[i]));
+				logOut = args[i];
 				break;
 				
 			case "--one-to-all":
@@ -128,7 +137,11 @@ public class Main {
 				if (args.length == i)
 					throw new BadParameterException("No start point for one-to-all provided");
 				
-				p.start = Integer.parseUnsignedInt(args[i]);
+				try {
+					p.start = Integer.parseUnsignedInt(args[i]);
+				} catch (NumberFormatException ex) {
+					throw new BadParameterException("Bad start point for one-to-all provided");
+				}
 				break;
 				
 			case "--tolerant":
@@ -154,36 +167,75 @@ public class Main {
 				
 				p.logLevel = Logger.Level.WARNING;
 				break;
+
+			case "--help":
+			case "-h":
+
+				// Note: Assuming 'etc/help.txt' is accessible
+				FileInputStream reader = new FileInputStream("etc/help.txt");
+				byte[] data = reader.readAllBytes();
 				
+				System.out.print(new String(data, "UTF-8"));
+
+				System.exit(Code.SUCCESS.value());
+
 			default:
 				
-				throw new BadParameterException("Unknown parameter");
+				throw new BadParameterException("Unknown parameter. Use -h for help");
 			}
 		}
 		
-		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-		BufferedWriter stdout = new BufferedWriter(new OutputStreamWriter(System.out));
-		
-		if (p.structureIn == null)
-			p.structureIn = stdin;
-		
-		if (p.requestIn == null)
-			p.requestIn = stdin;
-		
-		if (p.logOut == null)
-			p.logOut = stdout;
-
-		if (p.requestOut == null) {
+		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
+		BufferedWriter stdout = new BufferedWriter(new OutputStreamWriter(System.out, "UTF-8"));
+					
+		try {
 			
-			p.requestOut = stdout;
+			if (structureIn == null)
+				p.structureIn = stdin;
+			else
+				p.structureIn = new BufferedReader(new InputStreamReader(new FileInputStream(structureIn), "UTF-8"));
 			
-			if (p.logLevel == null)
-				p.logLevel = Logger.Level.ERROR;
+			if (requestIn == null)
+				p.requestIn = stdin;
+			else
+				if (structureIn != null && Files.isSameFile(Paths.get(requestIn), Paths.get(structureIn)))
+					p.requestIn = p.structureIn;
+				else
+					p.requestIn = new BufferedReader(new InputStreamReader(new FileInputStream(requestIn), "UTF-8"));
+			
+			if (requestOut == null)
+				p.requestOut = stdout;
+			else
+				p.requestOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(requestOut), "UTF-8"));
+			
+			if (logOut == null)
+				p.logOut = stdout;
+			else
+				if (requestOut != null && Files.isSameFile(Paths.get(logOut), Paths.get(requestOut)))
+					p.logOut = p.requestOut;
+				else
+					p.logOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(requestOut), "UTF-8"));	
+		
+		} catch (FileNotFoundException ex) {
+			
+			throw new BadParameterException("File not found");
+			
+		} catch (InvalidPathException ex) {
+			
+			throw new BadParameterException("Invalid path provided");
+			
+		} catch (SecurityException ex) {
+			
+			throw new BadParameterException("Security exception while opening file");
 		}
 		
+
 		if (p.logLevel == null) {
 			
-			p.logLevel = Logger.defaultLogLevel;
+			if (p.requestOut == p.logOut)
+				p.logLevel = Logger.defaultSameOutputLogLevel;
+			else
+				p.logLevel = Logger.defaultLogLevel;
 		}
 
 		return p;
@@ -213,7 +265,7 @@ public class Main {
 			DijkstraNode[] calcNodes = null;
 			long startTime, endTime;
 
-			logger.info("Reading graph");
+			logger.info(System.lineSeparator() + "Reading graph" + System.lineSeparator());
 
 			try {
 
@@ -248,7 +300,7 @@ public class Main {
 			}
 
 			logger.info(System.lineSeparator() + nodes.length + " nodes read in "
-					+ (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());
+					+ (double)(endTime - startTime) / 1000000000 + " seconds");
 			
 			
 			if (param.start != -1) {
@@ -261,33 +313,44 @@ public class Main {
 					throw new FatalFailure(Code.BAD_PARAMETER, "OTA nodeID out of range");
 				}
 				
+
+				startTime = System.nanoTime();
+
 				Dijkstra.DijkstraStructure struct = Dijkstra.calculate(
 						calcNodes, calcNodes[param.start], logger);
-				
+
+				endTime = System.nanoTime();	
+
+
+				logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator()
+						+ System.lineSeparator() + "Distances: [trgID] [distance]");
+
 				for (DijkstraNode node : struct.ordered) {
 					
-					param.requestOut.write(String.valueOf(node.node().id()));
-					param.requestOut.write(' ');
-					param.requestOut.write(String.valueOf(node.distance()));
+					String line = String.valueOf(node.node().id()) + ' ' + ParseUtilities.doubleToString(node.distance());
+					
+					param.requestOut.write(line);
 					param.requestOut.newLine();
+
+					logger.info(line);
 				}
 			
 			} else {
 				
 				// Read multiple requests
-				logger.info("Input format: [start:id] [end:id] e.g. 18445 12343");
-				logger.info("  use multiple lines for multiple requests");
-				logger.info("  end input with <EOF> (CTRL+D)");	
+				logger.info(System.lineSeparator()
+					+ "Input format: [srcID] [trgID] e.g. 18445 12343" + System.lineSeparator()
+					+ "  use multiple lines for multiple requests" + System.lineSeparator()
+					+ "  end input with <EOF> (CTRL+D)" + System.lineSeparator());
 
+				FileScanner.StringPosition pos = new FileScanner.StringPosition();
 				int lastRequest = -1;
 				while (true) {
 
 					int[] request;
 					try {
 						
-						logger.info(""); // Print new line
-
-						request = FileScanner.readRequest(param.requestIn, calcNodes.length, logger, param.isTolerant);
+						request = FileScanner.readRequest(param.requestIn, pos, calcNodes.length, logger, param.isTolerant);
 						
 					} catch (FileScanner.BadRequestException ex) {
 						
@@ -317,20 +380,18 @@ public class Main {
 						endTime = System.nanoTime();	
 
 
-						logger.info(System.lineSeparator() + "Path calculated in "
-								+ (double)(endTime - startTime) / 1000000000 + " seconds");	
+						logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());	
 					}
 					
 
 					DijkstraNode dst = calcNodes[request[1]];
 
-					param.requestOut.write(String.valueOf(dst.distance()));
+					String distance = ParseUtilities.doubleToString(dst.distance());
+
+					param.requestOut.write(distance);
 					param.requestOut.newLine();
-					
-					logger.info("Path:");
-					logger.info(dst.toPath());
-					logger.info("Distance:");
-					logger.info(String.valueOf(dst.distance()));
+
+					logger.info("Distance: " + distance + System.lineSeparator());
 				}	
 			}
 
@@ -381,5 +442,7 @@ public class Main {
 				System.exit(Code.IO_EXCEPTION.value());
 			}
 		}
+
+		System.exit(Code.SUCCESS.value());
 	}
 }
