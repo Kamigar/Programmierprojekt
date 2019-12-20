@@ -198,7 +198,8 @@ public class Main {
 			if (requestIn == null)
 				p.requestIn = stdin;
 			else
-				if (structureIn != null && Files.isSameFile(Paths.get(requestIn), Paths.get(structureIn)))
+				if (structureIn != null && Files.exists(Paths.get(requestIn))
+					&& Files.isSameFile(Paths.get(requestIn), Paths.get(structureIn)))
 					p.requestIn = p.structureIn;
 				else
 					p.requestIn = new BufferedReader(new InputStreamReader(new FileInputStream(requestIn), "UTF-8"));
@@ -211,10 +212,11 @@ public class Main {
 			if (logOut == null)
 				p.logOut = stdout;
 			else
-				if (requestOut != null && Files.isSameFile(Paths.get(logOut), Paths.get(requestOut)))
+				if (requestOut != null && Files.exists(Paths.get(logOut))
+					&& Files.isSameFile(Paths.get(logOut), Paths.get(requestOut)))
 					p.logOut = p.requestOut;
 				else
-					p.logOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(requestOut), "UTF-8"));	
+					p.logOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logOut), "UTF-8"));	
 		
 		} catch (FileNotFoundException ex) {
 			
@@ -262,7 +264,6 @@ public class Main {
 			logger = new Logger(param.logLevel, param.logOut);
 			
 			Node[] nodes = null;
-			DijkstraNode[] calcNodes = null;
 			long startTime, endTime;
 
 			logger.info(System.lineSeparator() + "Reading graph" + System.lineSeparator());
@@ -272,8 +273,6 @@ public class Main {
 				startTime = System.nanoTime();
 
 				nodes = FileScanner.readStructure(param.structureIn, logger, param.isTolerant);
-
-				calcNodes = DijkstraNode.createTree(nodes);
 				
 				endTime = System.nanoTime();	
 
@@ -306,7 +305,7 @@ public class Main {
 			if (param.start != -1) {
 
 				// Calculate one to all
-				if (param.start < 0 || param.start >= calcNodes.length) {
+				if (param.start < 0 || param.start >= nodes.length) {
 					
 					logger.error("nodeID of starting point out of range");
 					
@@ -316,8 +315,7 @@ public class Main {
 
 				startTime = System.nanoTime();
 
-				Dijkstra.DijkstraStructure struct = Dijkstra.calculate(
-						calcNodes, calcNodes[param.start], logger);
+				Node[] ordered = Dijkstra.calculate(nodes, nodes[param.start], logger);
 
 				endTime = System.nanoTime();	
 
@@ -325,9 +323,9 @@ public class Main {
 				logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator()
 						+ System.lineSeparator() + "Distances: [trgID] [distance]");
 
-				for (DijkstraNode node : struct.ordered) {
+				for (Node node : ordered) {
 					
-					String line = String.valueOf(node.node().id()) + ' ' + ParseUtilities.doubleToString(node.distance());
+					String line = String.valueOf(node.id()) + ' ' + ParseUtilities.doubleToString(node.distance());
 					
 					param.requestOut.write(line);
 					param.requestOut.newLine();
@@ -350,7 +348,7 @@ public class Main {
 					int[] request;
 					try {
 						
-						request = FileScanner.readRequest(param.requestIn, pos, calcNodes.length, logger, param.isTolerant);
+						request = FileScanner.readRequest(param.requestIn, pos, nodes.length, logger, param.isTolerant);
 						
 					} catch (FileScanner.BadRequestException ex) {
 						
@@ -369,13 +367,12 @@ public class Main {
 						
 						lastRequest = request[0];
 						
-						DijkstraNode.reset(calcNodes);
+						Node.reset(nodes);
 
 
 						startTime = System.nanoTime();
 						
-						Dijkstra.calculate(
-								calcNodes, calcNodes[lastRequest], logger);
+						Dijkstra.calculate(nodes, nodes[lastRequest], logger);
 						
 						endTime = System.nanoTime();	
 
@@ -384,7 +381,7 @@ public class Main {
 					}
 					
 
-					DijkstraNode dst = calcNodes[request[1]];
+					Node dst = nodes[request[1]];
 
 					String distance = ParseUtilities.doubleToString(dst.distance());
 

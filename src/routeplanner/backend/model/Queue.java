@@ -1,10 +1,8 @@
 package routeplanner.backend.model;
 
-import java.util.Vector;
-
-public class Queue<T> {
+public class Queue {
 	
-	public static class Entry<T> {
+	public static class Entry {
 		
 		private Entry()
 		{}
@@ -17,38 +15,38 @@ public class Queue<T> {
 			return _key;
 		}
 		
-		public T value() {
+		public Node value() {
 			return _value;
 		}
 		
 		private int _index;
 		private double _key;
-		private T _value;
+		private Node _value;
 	}
 	
 	
 	public Queue(int size) {
 		
-		_entries = new Vector<Entry<T>>(size);
+		_entries = new Entry[size];
 
 		for (int i = 0; i < size; i++)
-			_entries.add(new Entry<T>());
+			_entries[i] = new Entry();
 		
 		_size = 0;
 	}
 	
-	public Entry<T> insert(T value, double key) {
+	public Entry insert(Node value, double key) {
 		
-		Entry<T> t = insert(value);
+		Entry t = insert(value);
 		
 		decreaseKey(t, key);
 		
 		return t;
 	}
 
-	public Entry<T> insert(T value) {
+	public Entry insert(Node value) {
 
-		Entry<T> t = _entries.get(_size);
+		Entry t = _entries[_size];
 
 		t._index = _size;
 		t._key = Double.POSITIVE_INFINITY;
@@ -59,17 +57,17 @@ public class Queue<T> {
 		return t;
 	}
 	
-	public Entry<T> decreaseKey(Entry<T> entry, double key) {
+	public Entry decreaseKey(Entry entry, double key) {
 		
 		return decreaseKey(entry, entry._index, key);
 	}
 
-	private Entry<T> decreaseKey(Entry<T> entry, int index, double key) {
+	private Entry decreaseKey(Entry entry, int index, double key) {
 		
 		if (index == 0)
 			return setEntry(entry, index, key);
 		
-		Entry<T> parent = _entries.get((index - 1) / 2);
+		Entry parent = _entries[(index - 1) / 2];
 		
 		if (key >= parent._key)
 			return setEntry(entry, index, key);
@@ -79,17 +77,17 @@ public class Queue<T> {
 		return decreaseKey(entry, (index - 1) / 2, key);
 	}
 	
-	public Entry<T> increaseKey(Entry<T> entry, double key) {
+	public Entry increaseKey(Entry entry, double key) {
 		
 		return increaseKey(entry, entry._index, key);
 	}
 
-	private Entry<T> increaseKey(Entry<T> entry, int index, double key) {
+	private Entry increaseKey(Entry entry, int index, double key) {
 		
 		if (index * 2 + 1 >= _size)
 			return setEntry(entry, index, key);
 		
-		Entry<T> left = _entries.get(index * 2 + 1);
+		Entry left = _entries[index * 2 + 1];
 		
 		if (index * 2 + 2 >= _size) {
 			// Single child
@@ -102,7 +100,7 @@ public class Queue<T> {
 			return setEntry(entry, index * 2 + 1, key);
 		}
 		
-		Entry<T> min = _entries.get(index * 2 + 2);
+		Entry min = _entries[index * 2 + 2];
 		if (min._key > left._key)
 			min = left;
 		
@@ -116,16 +114,16 @@ public class Queue<T> {
 		return increaseKey(entry, newIndex, key);
 	}
 	
-	public Entry<T> peek() {
+	public Entry peek() {
 		
-		return _entries.get(0);
+		return _entries[0];
 	}
 	
-	public T poll() {
+	public Node poll() {
 		
-		Entry<T> first = peek();
+		Entry first = peek();
 		
-		Entry<T> last = setEntry(_entries.get(_size - 1), 0);
+		Entry last = setEntry(_entries[_size - 1], 0);
 		
 		setEntry(first, _size - 1);
 		
@@ -136,16 +134,16 @@ public class Queue<T> {
 		return first._value;
 	}
 	
-	private Entry<T> setEntry(Entry<T> entry, int index) {
+	private Entry setEntry(Entry entry, int index) {
 		
 		entry._index = index;
 		
-		_entries.set(index, entry);
+		_entries[index] = entry;
 		
 		return entry;
 	}
 
-	private Entry<T> setEntry(Entry<T> entry, int index, double key) {
+	private Entry setEntry(Entry entry, int index, double key) {
 		
 		entry._key = key;
 		
@@ -161,7 +159,7 @@ public class Queue<T> {
 	}
 	
 
-	private Vector<Entry<T>> _entries;
+	private Entry[] _entries;
 	
 	private int _size;
 }

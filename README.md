@@ -1,6 +1,24 @@
 # routeplanner
 ## An efficient Dijkstra shortest path implementation
 
+
+## Installation
+
+```
+.configure/configure.sh
+make
+sudo make install
+```
+
+### Environment Variables
+
+VARIABLE | Default | Explanation
+-|-|-
+`PREFIX` | `/usr/local` | The installation prefix
+
+
+## Usage
+
 Usage: `routeplanner [OPTION]...`
 
 ### Command line options
