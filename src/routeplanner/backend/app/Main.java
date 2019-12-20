@@ -198,7 +198,8 @@ public class Main {
 			if (requestIn == null)
 				p.requestIn = stdin;
 			else
-				if (structureIn != null && Files.isSameFile(Paths.get(requestIn), Paths.get(structureIn)))
+				if (structureIn != null && Files.exists(Paths.get(requestIn))
+					&& Files.isSameFile(Paths.get(requestIn), Paths.get(structureIn)))
 					p.requestIn = p.structureIn;
 				else
 					p.requestIn = new BufferedReader(new InputStreamReader(new FileInputStream(requestIn), "UTF-8"));
@@ -211,10 +212,11 @@ public class Main {
 			if (logOut == null)
 				p.logOut = stdout;
 			else
-				if (requestOut != null && Files.isSameFile(Paths.get(logOut), Paths.get(requestOut)))
+				if (requestOut != null && Files.exists(Paths.get(logOut))
+					&& Files.isSameFile(Paths.get(logOut), Paths.get(requestOut)))
 					p.logOut = p.requestOut;
 				else
-					p.logOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(requestOut), "UTF-8"));	
+					p.logOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logOut), "UTF-8"));	
 		
 		} catch (FileNotFoundException ex) {
 			
