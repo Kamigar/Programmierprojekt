@@ -68,14 +68,14 @@ public class Node {
 		_distance = distance;
 	}
 	
-	public Queue.Entry<Node> entry() {
+	public Queue.Entry entry() {
 		return _entry;
 	}
 	
-	public void setEntry(Queue.Entry<Node> entry) {
+	public void setEntry(Queue.Entry entry) {
 		_entry = entry;
 	}
-
+	
 	
 	private int _id;
 	
@@ -87,5 +87,5 @@ public class Node {
 	private Node _previous;
 	private double _distance;
 	
-	private Queue.Entry<Node> _entry;
+	private Queue.Entry _entry;
 }

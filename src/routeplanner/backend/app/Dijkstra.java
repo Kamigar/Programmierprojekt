@@ -10,7 +10,7 @@ public class Dijkstra {
 		
 		logger.info(System.lineSeparator() + "Prepare data for calculation");
 
-		Queue<Node> nodeList = new Queue<Node>(nodes.length);
+		Queue nodeList = new Queue(nodes.length);
 
 		int finishedIndex = 0;
 		Node[] finishedNodes = new Node[nodes.length];
