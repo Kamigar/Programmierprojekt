@@ -16,7 +16,7 @@ echo $PREFIX > prefix.var
 cat > routeplanner <<EOF
 #!/bin/sh
 
-java -Xmx8g -jar $PREFIX/lib/routeplanner/routeplanner.jar "\$@"
+java -Xmx6g -jar $PREFIX/lib/routeplanner/routeplanner.jar "\$@"
 
 EOF
 
