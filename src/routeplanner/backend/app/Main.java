@@ -315,8 +315,7 @@ public class Main {
 
 				startTime = System.nanoTime();
 
-				Node[] ordered = Dijkstra.calculate(
-						nodes, nodes[param.start], logger);
+				Node[] ordered = Dijkstra.calculate(nodes, nodes[param.start], logger);
 
 				endTime = System.nanoTime();	
 

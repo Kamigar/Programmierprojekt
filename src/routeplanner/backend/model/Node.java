@@ -31,19 +31,6 @@ public class Node {
 		for (Node node : nodes)
 			node.reset();
 	}
-
-	public String toString() {
-		
-		return "[" + _id + "]";
-	}
-
-	public String toPath() {
-		
-		if (_previous == null)
-			return toString();
-		
-		return _previous.toPath() + " -> " + toString();
-	}
 	
 	public int id() {
 		return _id;
