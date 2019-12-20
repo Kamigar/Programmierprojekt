@@ -2,8 +2,7 @@ package routeplanner.backend.app;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.Vector;
+import java.util.Arrays;
 
 import routeplanner.backend.model.*;
 
@@ -333,14 +332,11 @@ public class FileScanner {
 		Node[] nodes = new Node[cnt[0]];
 		Edge[] edges = new Edge[cnt[1]];
 		
-		Vector<LinkedList<Edge>> relations = new Vector<LinkedList<Edge>>(cnt[0]);
-		
 		for (int i = 0; i < cnt[0]; i++) {
 			
 			FmiNode t = readNode(reader, pos, nodes, logger, isTolerant);
 
-			nodes[t.id()] = new Node(t.id(), t.latitude(), t.longitude());
-			relations.add(new LinkedList<Edge>());
+			nodes[t.id()] = new Node(t.id(), t.latitude(), t.longitude(), new Edge[0]);
 		}
 		
 		logger.info("Nodes parsed" + System.lineSeparator() + System.lineSeparator()
@@ -351,19 +347,15 @@ public class FileScanner {
 			FmiEdge t = readEdge(reader, pos, nodes, logger, isTolerant);
 			
 			edges[i] = new Edge(nodes[t.srcId()], nodes[t.trgId()], t.cost());
-
-			relations.get(t.srcId()).add(edges[i]);
+			
+			// Note: Inefficient if there are a lot of edges per node
+			//         but reduces memory footprint
+			Node src = nodes[t.srcId()];
+			src.setEdges(Arrays.copyOf(src.edges(), src.edges().length + 1));
+			src.edges()[src.edges().length - 1] = edges[i];
 		}
 		
 		logger.info("Edges parsed" + System.lineSeparator());
-		
-		for (int i = 0; i < cnt[0]; i++) {
-			
-			Edge[] e = new Edge[relations.get(i).size()];
-			e = relations.get(i).toArray(e);
-
-			nodes[i].setEdges(e);
-		}
 		
 		logger.info("Adjacency graph created");	
 

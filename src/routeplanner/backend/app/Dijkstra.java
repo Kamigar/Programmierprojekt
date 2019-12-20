@@ -1,24 +1,19 @@
 package routeplanner.backend.app;
 
 import java.io.IOException;
-import java.util.Vector;
 
 import routeplanner.backend.model.*;
 
 public class Dijkstra {
 	
-	public static class DijkstraStructure {
-		public DijkstraNode[] nodes;
-		public Vector<DijkstraNode> ordered;
-	}
-	
-	public static DijkstraStructure calculate(DijkstraNode[] nodes, DijkstraNode start, Logger logger) throws IOException {
+	public static Node[] calculate(Node[] nodes, Node start, Logger logger) throws IOException {
 		
 		logger.info(System.lineSeparator() + "Prepare data for calculation");
 
-		Queue<DijkstraNode> nodeList = new Queue<DijkstraNode>(nodes.length);
+		Queue<Node> nodeList = new Queue<Node>(nodes.length);
 
-		Vector<DijkstraNode> finishedNodes = new Vector<DijkstraNode>(nodes.length);
+		int finishedIndex = 0;
+		Node[] finishedNodes = new Node[nodes.length];
 		
 		start.setDistance(0);
 		start.setEntry(nodeList.insert(start, 0));
@@ -27,14 +22,15 @@ public class Dijkstra {
 		
 		while (!nodeList.isEmpty()) {
 			
-			DijkstraNode current = nodeList.poll();
+			Node current = nodeList.poll();
 			current.setEntry(null);
 
-			finishedNodes.add(current);
+			finishedNodes[finishedIndex] = current;
+			finishedIndex++;
 			
-			for (DijkstraEdge edge : current.edges()) {
+			for (Edge edge : current.edges()) {
 				
-				DijkstraNode neighbour = edge.trg();
+				Node neighbour = edge.trg();
 				
 				double newDistance = current.distance() + edge.cost();
 				double oldDistance = neighbour.distance();
@@ -57,9 +53,6 @@ public class Dijkstra {
 		
 		logger.info("Calculation finished");
 		
-		DijkstraStructure r = new DijkstraStructure();
-		r.nodes = nodes;
-		r.ordered = finishedNodes;
-		return r;
+		return finishedNodes;
 	}
 }

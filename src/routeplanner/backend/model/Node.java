@@ -15,6 +15,34 @@ public class Node {
 		_latitude = latitude;
 		_longitude = longitude;
 		_edges = edges;
+		
+		reset();
+	}
+	
+	public void reset() {
+		
+		_previous = null;
+		_distance = Double.POSITIVE_INFINITY;
+		_entry = null;
+	}
+	
+	public static void reset(Node[] nodes) {
+		
+		for (Node node : nodes)
+			node.reset();
+	}
+
+	public String toString() {
+		
+		return "[" + _id + "]";
+	}
+
+	public String toPath() {
+		
+		if (_previous == null)
+			return toString();
+		
+		return _previous.toPath() + " -> " + toString();
 	}
 	
 	public int id() {
@@ -36,6 +64,30 @@ public class Node {
 	public void setEdges(Edge[] edges) {
 		_edges = edges;
 	}
+	
+	public Node previous() {
+		return _previous;
+	}
+	
+	public void setPrevious(Node previous) {
+		_previous = previous;
+	}
+	
+	public double distance() {
+		return _distance;
+	}
+	
+	public void setDistance(double distance) {
+		_distance = distance;
+	}
+	
+	public Queue.Entry<Node> entry() {
+		return _entry;
+	}
+	
+	public void setEntry(Queue.Entry<Node> entry) {
+		_entry = entry;
+	}
 
 	
 	private int _id;
@@ -44,4 +96,9 @@ public class Node {
 	private double _longitude;
 	
 	private Edge[] _edges;
+	
+	private Node _previous;
+	private double _distance;
+	
+	private Queue.Entry<Node> _entry;
 }
