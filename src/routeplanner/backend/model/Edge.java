@@ -1,5 +1,8 @@
 package routeplanner.backend.model;
 
+/*
+ * Represents an edge of the graph
+ */
 public class Edge {
 	
 	public Edge(Node src, Node trg, double cost) {
@@ -22,8 +25,11 @@ public class Edge {
 	}
 	
 
+	// Source node
 	private Node _src;
+	// Target node
 	private Node _trg;
 	
+	// Cost (distance) from source to target
 	private double _cost;
 }

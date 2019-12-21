@@ -1,5 +1,8 @@
 package routeplanner.backend.model;
 
+/*
+ * Represents a node of the graph
+ */
 public class Node {
 	
 	public Node(int id, double latitude,
@@ -19,6 +22,7 @@ public class Node {
 		reset();
 	}
 	
+	// Reset the working values of the Dijkstra algorithm
 	public void reset() {
 		
 		_previous = null;
@@ -26,6 +30,7 @@ public class Node {
 		_entry = null;
 	}
 	
+	// Reset an array of nodes
 	public static void reset(Node[] nodes) {
 		
 		for (Node node : nodes)
@@ -77,15 +82,22 @@ public class Node {
 	}
 	
 	
+	// ID
 	private int _id;
 	
+	// Latitude
 	private double _latitude;
+	// Longitude
 	private double _longitude;
 	
+	// Edges from this to another node
 	private Edge[] _edges;
 	
+	// Next node on the shortest path to a given start point
 	private Node _previous;
+	// Shortest distance from start point
 	private double _distance;
 	
+	// Entry in the priority queue
 	private Queue.Entry _entry;
 }
