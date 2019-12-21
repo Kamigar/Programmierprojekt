@@ -15,8 +15,14 @@ import java.nio.file.Paths;
 import routeplanner.backend.app.FileScanner;
 import routeplanner.backend.model.*;
 
+/*
+ * Program flow and user interaction
+ */
 public class Main {
 	
+	/*
+	 * Return codes of program
+	 */
 	public enum Code {
 
 		SUCCESS(0),
@@ -37,11 +43,10 @@ public class Main {
 		private int _value;
 	}	
 
+	// Exception classes
+
 	private static class FatalFailure extends Exception {
 		
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 988623077434694182L;
 
 		public FatalFailure(Code code, String message) {
@@ -58,14 +63,14 @@ public class Main {
 	
 	private static class BadParameterException extends Exception {
 		
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = -6297306542282662293L;
 
 		public BadParameterException(String detail) { super(detail); }
 	}
 
+	/*
+	 * Parameters for the program execution
+	 */
 	private static class Parameters {
 		
 		public BufferedReader structureIn = null;
@@ -77,7 +82,7 @@ public class Main {
 		public boolean isTolerant = false;
 	}
 	
-
+	// Read command line parameters
 	private static Parameters readParameters(String[] args)
 			throws BadParameterException, IOException {
 		
@@ -243,6 +248,7 @@ public class Main {
 		return p;
 	}
 
+	// Main function
 	public static void main(String[] args) {
 
 		Parameters param = null;
@@ -251,6 +257,7 @@ public class Main {
 			
 			try {
 			
+				// Read command line parameters
 				param = readParameters(args);
 				
 			} catch (BadParameterException ex) {
@@ -272,6 +279,7 @@ public class Main {
 
 				startTime = System.nanoTime();
 
+				// Read graph description file
 				nodes = FileScanner.readStructure(param.structureIn, logger, param.isTolerant);
 				
 				endTime = System.nanoTime();	
@@ -315,6 +323,7 @@ public class Main {
 
 				startTime = System.nanoTime();
 
+				// Calculate distances
 				Node[] ordered = Dijkstra.calculate(nodes, nodes[param.start], logger);
 
 				endTime = System.nanoTime();	
@@ -323,6 +332,7 @@ public class Main {
 				logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator()
 						+ System.lineSeparator() + "Distances: [trgID] [distance]");
 
+				// Output result
 				for (Node node : ordered) {
 					
 					String line = String.valueOf(node.id()) + ' ' + ParseUtilities.doubleToString(node.distance());
@@ -348,6 +358,7 @@ public class Main {
 					int[] request;
 					try {
 						
+						// Read path request
 						request = FileScanner.readRequest(param.requestIn, pos, nodes.length, logger, param.isTolerant);
 						
 					} catch (FileScanner.BadRequestException ex) {
@@ -367,11 +378,13 @@ public class Main {
 						
 						lastRequest = request[0];
 						
+						// Reset nodes for new calculation
 						Node.reset(nodes);
 
 
 						startTime = System.nanoTime();
 						
+						// Calculate distances
 						Dijkstra.calculate(nodes, nodes[lastRequest], logger);
 						
 						endTime = System.nanoTime();	
@@ -380,6 +393,7 @@ public class Main {
 						logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());	
 					}
 					
+					// Output result
 
 					Node dst = nodes[request[1]];
 

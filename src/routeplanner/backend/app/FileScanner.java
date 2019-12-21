@@ -6,13 +6,15 @@ import java.util.Arrays;
 
 import routeplanner.backend.model.*;
 
+/*
+ * Parsing of graph and requests
+ */
 public class FileScanner {
 	
+	// Exception classes
+
 	public static class BadHeaderException extends Exception {
 		
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1926680537412845559L;
 
 		public BadHeaderException(String reason) { super(reason); }
@@ -20,9 +22,6 @@ public class FileScanner {
 	
 	public static class BadNodeException extends Exception {
 		
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1378424271026452872L;
 
 		public BadNodeException(String reason) { super(reason); }
@@ -30,9 +29,6 @@ public class FileScanner {
 	
 	public static class BadEdgeException extends Exception {
 		
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = -1460975851840457803L;
 
 		public BadEdgeException(String reason) { super(reason); }
@@ -40,20 +36,18 @@ public class FileScanner {
 	
 	public static class BadRequestException extends Exception {
 		
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 4575260669648696900L;
 
 		public BadRequestException(String reason) { super(reason); }
 	}
 	
-	
+	// Represents the position of a character in a string
 	static class StringPosition {
 		String string = null;
 		int index = -1;
 	}
 	
+	// Jump to next non-whitespace character
 	private static int skipWhitespace(String str, int startIndex) {
 		
 		int i = startIndex;
@@ -62,6 +56,7 @@ public class FileScanner {
 		return i;
 	}
 	
+	// Jump to next non-digit character
 	private static int skipInteger(String str, int startIndex) {
 		
 		int i = startIndex;
@@ -70,6 +65,7 @@ public class FileScanner {
 		return i;
 	}
 	
+	// Jump over float (integer with optional decimal places)
 	private static int skipFloat(String str, int startIndex) {
 		
 		int i = skipInteger(str, startIndex);
@@ -81,6 +77,7 @@ public class FileScanner {
 		return i;
 	}
 	
+	// Return next line from reader, which is not a comment
 	private static void getNextRelevantLine(StringPosition pos, BufferedReader reader) throws IOException {
 		
 		String line;
@@ -97,6 +94,7 @@ public class FileScanner {
 		pos.index = -1;
 	}
 	
+	// Read the file header (number of nodes and edges)
 	private static void readHeader(int[] cnt, BufferedReader reader,
 			StringPosition pos, Logger logger, boolean isTolerant)
 				throws BadHeaderException, IOException {
@@ -154,6 +152,7 @@ public class FileScanner {
 		}
 	}
 	
+	// Parse a node from the reader
 	private static FmiNode readNode(BufferedReader reader, StringPosition pos,
 			Node[] nodes, Logger logger, boolean isTolerant)
 				throws BadNodeException, IOException {
@@ -235,6 +234,7 @@ public class FileScanner {
 		}
 	}
 
+	// Parse an edge from the reader
 	private static FmiEdge readEdge(BufferedReader reader, StringPosition pos,
 			Node[] nodes, Logger logger, boolean isTolerant)
 				throws BadEdgeException, IOException {
@@ -316,6 +316,7 @@ public class FileScanner {
 		}
 	}
 
+	// Read the graph description file
 	public static Node[] readStructure(BufferedReader reader, Logger logger, boolean isTolerant)
 			throws BadHeaderException, BadNodeException, BadEdgeException, IOException {
 		
@@ -362,6 +363,7 @@ public class FileScanner {
 		return nodes;
 	}
 	
+	// Read a single request
 	public static int[] readRequest(BufferedReader reader, StringPosition pos,
 			int maxId, Logger logger, boolean isTolerant)
 				throws BadRequestException, IOException {

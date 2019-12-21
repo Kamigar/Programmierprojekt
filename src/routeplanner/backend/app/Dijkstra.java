@@ -4,8 +4,12 @@ import java.io.IOException;
 
 import routeplanner.backend.model.*;
 
+/*
+ * Implementation of the Dijkstra algorithm
+ */
 public class Dijkstra {
 	
+	// Calculate shortest paths from start to all other nodes
 	public static Node[] calculate(Node[] nodes, Node start, Logger logger) throws IOException {
 		
 		logger.info(System.lineSeparator() + "Prepare data for calculation");
@@ -15,6 +19,7 @@ public class Dijkstra {
 		int finishedIndex = 0;
 		Node[] finishedNodes = new Node[nodes.length];
 		
+		// Initialize start node with distance 0
 		start.setDistance(0);
 		start.setEntry(nodeList.insert(start, 0));
 
@@ -22,6 +27,7 @@ public class Dijkstra {
 		
 		while (!nodeList.isEmpty()) {
 			
+			// Remove next node from queue
 			Node current = nodeList.poll();
 			current.setEntry(null);
 
@@ -30,6 +36,7 @@ public class Dijkstra {
 			
 			for (Edge edge : current.edges()) {
 				
+				// Check if there is an unknown (shorter) path
 				Node neighbour = edge.trg();
 				
 				double newDistance = current.distance() + edge.cost();
@@ -40,11 +47,11 @@ public class Dijkstra {
 					neighbour.setPrevious(current);
 					
 					if (neighbour.entry() == null) {
-						
+						// Add node to queue
 						neighbour.setEntry(nodeList.insert(neighbour, neighbour.distance()));
 
 					} else {
-						
+						// Update (decrease) distance
 						nodeList.decreaseKey(neighbour.entry(), neighbour.distance());
 					}
 				}
