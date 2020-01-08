@@ -34,13 +34,13 @@ public class Queue {
 	// Initialize queue for maximal possible key values
 	public Queue() {
 		
-		this(Integer.MAX_VALUE - 1);
+		this(Integer.MAX_VALUE);
 	}
 	
 	// Initialize queue with maximal key value
 	public Queue(int keyBound) {
 		
-		int bNum = (int)(Math.log(keyBound + 1) / Math.log(2)) + 1;
+		int bNum = highestBit(keyBound) + 1;
 		
 		_buckets = new Vector<LinkedList<Entry>>(bNum);
 		for (int i = 0; i < bNum; i++)
@@ -79,15 +79,16 @@ public class Queue {
 	// Get and remove first entry (minimal key)
 	public Entry poll() {
 		
-		// Find first non-empty bucket
-		int bIndex = 0;
-		for (; _buckets.get(bIndex).isEmpty(); bIndex++);
+		_size--;
 		
-		if (bIndex == 0) {
+		if (!_buckets.firstElement().isEmpty()) {
 			// First bucket is not empty, so no redistribution of entries needed
-			_size--;
 			return _buckets.firstElement().removeFirst();
 		}
+
+		// Find first non-empty bucket
+		int bIndex = 1;
+		for (; _buckets.get(bIndex).isEmpty(); bIndex++);
 
 		LinkedList<Entry> list = _buckets.get(bIndex);
 		
@@ -123,7 +124,6 @@ public class Queue {
 		}
 		
 		_emptyList = list;
-		_size--;
 		return root;
 	}
 	
@@ -150,7 +150,7 @@ public class Queue {
 	
 	// Find index of highest set bit in value
 	private static int highestBit(int value) {
-		
+
 		return 32 - Integer.numberOfLeadingZeros(value);
 	}
 
