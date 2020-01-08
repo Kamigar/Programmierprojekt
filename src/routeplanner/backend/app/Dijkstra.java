@@ -14,7 +14,7 @@ public class Dijkstra {
 		
 		logger.info(System.lineSeparator() + "Prepare data for calculation");
 
-		Queue nodeList = new Queue(nodes.length);
+		Queue nodeList = new Queue();
 
 		int finishedIndex = 0;
 		Node[] finishedNodes = new Node[nodes.length];
@@ -28,7 +28,7 @@ public class Dijkstra {
 		while (!nodeList.isEmpty()) {
 			
 			// Remove next node from queue
-			Node current = nodeList.poll();
+			Node current = nodeList.poll().node();
 			current.setEntry(null);
 
 			finishedNodes[finishedIndex] = current;
@@ -39,8 +39,8 @@ public class Dijkstra {
 				// Check if there is an unknown (shorter) path
 				Node neighbour = edge.trg();
 				
-				double newDistance = current.distance() + edge.cost();
-				double oldDistance = neighbour.distance();
+				int newDistance = current.distance() + edge.cost();
+				int oldDistance = neighbour.distance();
 				if (oldDistance > newDistance) {
 
 					neighbour.setDistance(newDistance);

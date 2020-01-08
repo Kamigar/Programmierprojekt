@@ -265,12 +265,12 @@ public class FileScanner {
 			
 			pos.index = skipWhitespace(pos.string, end);
 			
-			double cost;
-			end = skipFloat(pos.string, pos.index);
+			int cost;
+			end = skipInteger(pos.string, pos.index);
 			try {
-				cost = Double.parseDouble(pos.string.substring(pos.index, end));
+				cost = Integer.parseUnsignedInt(pos.string.substring(pos.index, end));
 			} catch (NumberFormatException ex) {
-				throw new BadEdgeException("No cost provided [double]");
+				throw new BadEdgeException("No cost provided [uint]");
 			}
 			
 			pos.index = skipWhitespace(pos.string, end);
