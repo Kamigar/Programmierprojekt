@@ -32,15 +32,16 @@ The program operates on 2 input (default: `stdin`) and 2 output (default: `stdou
 OPTION | Explanation
 -|-
 `-i, --input-file <file>`<br>&nbsp;&nbsp;`[default: stdin]` | Description of the graph structure<br>Input format:<br>`[total number of nodes]`<br>`[total number of edges]`<br>`FOR EACH NODE:`<br>&nbsp;&nbsp;`[nodeID] [nodeID2] [latitude] [longitude] [elevation]`<br>`FOR EACH EDGE:`<br>&nbsp;&nbsp;`[srcID] [trgID] [cost] [type] [maxspeed]`
-`-r, --request-file <file>`<br>&nbsp;&nbsp;`[default: stdin]` | List of distances to calculate<br>Input format:<br>`FOR EACH ROUTE:`<br>&nbsp;&nbsp;`[srcID] [trgID]`
+`-r, --request-file <file>`<br>&nbsp;&nbsp;`[default: stdin]` | List of distances to calculate<br>Note: Omit `[srcID]` if `--one-to-many` is used<br>Input format:<br>`FOR EACH ROUTE:`<br>&nbsp;&nbsp;`[srcID] [trgID]`
 `-o, --output-file <file>`<br>&nbsp;&nbsp;`[default: stdout]` | Output of the calculated distances<br>Output format:<br>`FOR EACH ROUTE:`<br>&nbsp;&nbsp;`[cost]`
 `-l, --log-file <file>`<br>&nbsp;&nbsp;`[default: stdout]` | Log output of the program
 
-Also there is the option to start a single one-to-all calculation.
+Also there is the option to start a single one-to-all or one-to-many calculation.
 
 OPTION | Explanation
 -|-
 `-ota, --one-to-all <srcID>` | Calculate all distances from start point `<srcID>`
+`-otm, --one-to-many <srcID>` | Calculate distances from start point `<srcID>`
 
 The log verbosity defaults to `--warning` (`--quiet` if `--output-file` is same as `--log-file`).
 

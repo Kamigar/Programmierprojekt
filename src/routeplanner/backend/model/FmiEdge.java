@@ -5,7 +5,7 @@ package routeplanner.backend.model;
  */
 public class FmiEdge {
 
-	public FmiEdge(int srcId, int trgId, double cost) {
+	public FmiEdge(int srcId, int trgId, int cost) {
 
 		_srcId = srcId;
 		_trgId = trgId;
@@ -20,7 +20,7 @@ public class FmiEdge {
 		return _trgId;
 	}
 
-	public double cost() {
+	public int cost() {
 		return _cost;
 	}
 
@@ -31,5 +31,5 @@ public class FmiEdge {
 	private int _trgId;
 
 	// Cost (distance) from source to target
-	private double _cost;
+	private int _cost;
 }

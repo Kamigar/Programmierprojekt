@@ -265,12 +265,12 @@ public class FileScanner {
 			
 			pos.index = skipWhitespace(pos.string, end);
 			
-			double cost;
-			end = skipFloat(pos.string, pos.index);
+			int cost;
+			end = skipInteger(pos.string, pos.index);
 			try {
-				cost = Double.parseDouble(pos.string.substring(pos.index, end));
+				cost = Integer.parseUnsignedInt(pos.string.substring(pos.index, end));
 			} catch (NumberFormatException ex) {
-				throw new BadEdgeException("No cost provided [double]");
+				throw new BadEdgeException("No cost provided [uint]");
 			}
 			
 			pos.index = skipWhitespace(pos.string, end);
@@ -361,6 +361,50 @@ public class FileScanner {
 		logger.info("Adjacency graph created");	
 
 		return nodes;
+	}
+	
+	// Read a target ID (request for one-to-many)
+	public static int readTarget(BufferedReader reader, StringPosition pos,
+			int maxId, Logger logger, boolean isTolerant) throws BadRequestException, IOException {
+		
+		try {
+			
+			getNextRelevantLine(pos, reader);
+			
+			if (pos.string == null)
+				return -1;
+			
+			int trgId;
+			int end = skipInteger(pos.string, pos.index);
+			try {
+				trgId = Integer.parseUnsignedInt(pos.string.substring(pos.index, end));
+			} catch (NumberFormatException ex) {
+				throw new BadRequestException("No trgID provided [uint]");
+			}
+			
+			end = skipWhitespace(pos.string, end);
+			if (end < pos.string.length())
+				throw new BadRequestException("Unexpected data in line");
+			
+			if (trgId < 0 || trgId >= maxId)
+				throw new BadRequestException("trgID out of range");
+			
+			return trgId;
+
+		} catch (BadRequestException ex) {
+			
+			if (isTolerant) {
+				
+				logger.warning(System.lineSeparator() + ex.getMessage());
+				logger.warning("Error in request. Try again...");
+				
+				return readTarget(reader, pos, maxId, logger, isTolerant);
+				
+			} else {
+				
+				throw ex;
+			}
+		}
 	}
 	
 	// Read a single request

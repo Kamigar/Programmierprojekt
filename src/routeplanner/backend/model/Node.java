@@ -26,7 +26,7 @@ public class Node {
 	public void reset() {
 		
 		_previous = null;
-		_distance = Double.POSITIVE_INFINITY;
+		_distance = Integer.MAX_VALUE;
 		_entry = null;
 	}
 	
@@ -65,11 +65,11 @@ public class Node {
 		_previous = previous;
 	}
 	
-	public double distance() {
+	public int distance() {
 		return _distance;
 	}
 	
-	public void setDistance(double distance) {
+	public void setDistance(int distance) {
 		_distance = distance;
 	}
 	
@@ -96,7 +96,7 @@ public class Node {
 	// Next node on the shortest path to a given start point
 	private Node _previous;
 	// Shortest distance from start point
-	private double _distance;
+	private int _distance;
 	
 	// Entry in the priority queue
 	private Queue.Entry _entry;

@@ -23,7 +23,7 @@ public class Main {
 	/*
 	 * Return codes of program
 	 */
-	public enum Code {
+	private static enum Code {
 
 		SUCCESS(0),
 		
@@ -67,6 +67,12 @@ public class Main {
 
 		public BadParameterException(String detail) { super(detail); }
 	}
+	
+	private static enum Mode {
+		OTO,
+		OTA,
+		OTM
+	}
 
 	/*
 	 * Parameters for the program execution
@@ -77,6 +83,7 @@ public class Main {
 		public BufferedReader requestIn = null;
 		public BufferedWriter requestOut = null;
 		public BufferedWriter logOut = null;
+		public Mode mode = Mode.OTO;
 		public int start = -1;
 		public Logger.Level logLevel = null;
 		public boolean isTolerant = false;
@@ -147,6 +154,22 @@ public class Main {
 				} catch (NumberFormatException ex) {
 					throw new BadParameterException("Bad start point for one-to-all provided");
 				}
+				p.mode = Mode.OTA;
+				break;
+				
+			case "--one-to-many":
+			case "-otm":
+				
+				i++;
+				if (args.length == i)
+					throw new BadParameterException("No start point for one-to-many provided");
+				
+				try {
+					p.start = Integer.parseUnsignedInt(args[i]);
+				} catch (NumberFormatException ex) {
+					throw new BadParameterException("Bad start point for one-to-many provided");
+				}
+				p.mode = Mode.OTM;
 				break;
 				
 			case "--tolerant":
@@ -312,12 +335,12 @@ public class Main {
 			
 			if (param.start != -1) {
 
-				// Calculate one to all
+				// Calculate distances from one starting point
 				if (param.start < 0 || param.start >= nodes.length) {
 					
 					logger.error("nodeID of starting point out of range");
 					
-					throw new FatalFailure(Code.BAD_PARAMETER, "OTA nodeID out of range");
+					throw new FatalFailure(Code.BAD_PARAMETER, "nodeID out of range");
 				}
 				
 
@@ -332,15 +355,60 @@ public class Main {
 				logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator()
 						+ System.lineSeparator() + "Distances: [trgID] [distance]");
 
-				// Output result
-				for (Node node : ordered) {
-					
-					String line = String.valueOf(node.id()) + ' ' + ParseUtilities.doubleToString(node.distance());
-					
-					param.requestOut.write(line);
-					param.requestOut.newLine();
+				if (param.mode == Mode.OTA) {
 
-					logger.info(line);
+					// Output result
+					for (Node node : ordered) {
+						
+						String line = String.valueOf(node.id()) + ' ' + ParseUtilities.intToString(node.distance());
+						
+						param.requestOut.write(line);
+						param.requestOut.newLine();
+
+						logger.info(line);
+					}	
+
+				} else {
+					
+					// Read multiple requests
+					logger.info(System.lineSeparator()
+						+ "Input format: [trgID] e.g. 18445" + System.lineSeparator()
+						+ "  use multiple lines for multiple requests" + System.lineSeparator()
+						+ "  end input with <EOF> (CTRL+D)" + System.lineSeparator());
+
+					FileScanner.StringPosition pos = new FileScanner.StringPosition();
+					while (true) {
+
+						int trgId;
+						try {
+							
+							// Read target request
+							trgId = FileScanner.readTarget(param.requestIn, pos, nodes.length, logger, param.isTolerant);
+
+						} catch (FileScanner.BadRequestException ex) {
+							
+							logger.error("Bad request provided");
+							logger.info(ex.getMessage());
+							
+							throw new FatalFailure(Code.BAD_REQUEST, "Bad request provided");
+						}
+
+						// Note: No 'while (trgId != -1) {...}' loop used
+						//   to prevent code duplication of 'FileScanner.readRequest(...)'
+						if (trgId == -1)
+							break;
+						
+						// Output result
+
+						Node dst = nodes[trgId];
+
+						String distance = ParseUtilities.intToString(dst.distance());
+
+						param.requestOut.write(distance);
+						param.requestOut.newLine();
+
+						logger.info("Distance: " + distance + System.lineSeparator());
+					}
 				}
 			
 			} else {
@@ -397,7 +465,7 @@ public class Main {
 
 					Node dst = nodes[request[1]];
 
-					String distance = ParseUtilities.doubleToString(dst.distance());
+					String distance = ParseUtilities.intToString(dst.distance());
 
 					param.requestOut.write(distance);
 					param.requestOut.newLine();

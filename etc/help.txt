@@ -19,7 +19,8 @@ The program operates on 2 input (default: stdin) and 2 output (default: stdout) 
                                                   [srcID] [trgID] [cost] [type] [maxspeed]
 
 -r, --request-file <file>       List of distances to calculate
-  [default: stdin]                Input format: FOR EACH ROUTE:
+  [default: stdin]                Note: Omit [srcID] if --one-to-many is used
+                                  Input format: FOR EACH ROUTE:
                                                   [srcID] [trgID]
 
 -o, --output-file <file>        Output of the calculated distances
@@ -30,9 +31,11 @@ The program operates on 2 input (default: stdin) and 2 output (default: stdout) 
   [default: stdout]               
 
 
-Also there is the option to start a single one-to-all calculation.
+Also there is the option to start a single one-to-all or one-to-many calculation.
 
 -ota, --one-to-all <srcID>      Calculate all distances from start point <srcID>
+
+-otm, --one-to-many <srcID>     Calculate distances from start point <srcID>
 
 
 The log verbosity defaults to --warning (--quiet if --output-file is same as --log-file).

@@ -5,7 +5,7 @@ package routeplanner.backend.model;
  */
 public class Edge {
 	
-	public Edge(Node src, Node trg, double cost) {
+	public Edge(Node src, Node trg, int cost) {
 		
 		_src = src;
 		_trg = trg;
@@ -20,7 +20,7 @@ public class Edge {
 		return _trg;
 	}
 	
-	public double cost() {
+	public int cost() {
 		return _cost;
 	}
 	
@@ -31,5 +31,5 @@ public class Edge {
 	private Node _trg;
 	
 	// Cost (distance) from source to target
-	private double _cost;
+	private int _cost;
 }
