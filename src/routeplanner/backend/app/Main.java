@@ -360,7 +360,7 @@ public class Main {
 					// Output result
 					for (Node node : ordered) {
 						
-						String line = String.valueOf(node.id()) + ' ' + ParseUtilities.doubleToString(node.distance());
+						String line = String.valueOf(node.id()) + ' ' + ParseUtilities.intToString(node.distance());
 						
 						param.requestOut.write(line);
 						param.requestOut.newLine();
@@ -402,7 +402,7 @@ public class Main {
 
 						Node dst = nodes[trgId];
 
-						String distance = ParseUtilities.doubleToString(dst.distance());
+						String distance = ParseUtilities.intToString(dst.distance());
 
 						param.requestOut.write(distance);
 						param.requestOut.newLine();
@@ -465,7 +465,7 @@ public class Main {
 
 					Node dst = nodes[request[1]];
 
-					String distance = ParseUtilities.doubleToString(dst.distance());
+					String distance = ParseUtilities.intToString(dst.distance());
 
 					param.requestOut.write(distance);
 					param.requestOut.newLine();
