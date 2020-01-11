@@ -332,7 +332,22 @@ public class Main {
 			logger.info(System.lineSeparator() + nodes.length + " nodes read in "
 					+ (double)(endTime - startTime) / 1000000000 + " seconds");
 			
+
+			logger.info(System.lineSeparator() + "Prepare data for calculation");
+
+			Dijkstra dijkstra = new Dijkstra();
+
+			dijkstra.prepare(nodes);
 			
+
+			logger.info("Run garbage collection");
+
+			Runtime.getRuntime().gc();
+			
+
+			logger.info(System.lineSeparator() + "Initialization finished");
+			
+
 			if (param.start != -1) {
 
 				// Calculate distances from one starting point
@@ -344,21 +359,25 @@ public class Main {
 				}
 				
 
+				logger.info(System.lineSeparator() + "Start calculation");
+
 				startTime = System.nanoTime();
 
 				// Calculate distances
-				Node[] ordered = Dijkstra.calculate(nodes, nodes[param.start], logger);
+				dijkstra.calculate(param.start);
 
 				endTime = System.nanoTime();	
 
 
 				logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator()
 						+ System.lineSeparator() + "Distances: [trgID] [distance]");
+				
+				dijkstra.getResult(nodes);
 
 				if (param.mode == Mode.OTA) {
 
 					// Output result
-					for (Node node : ordered) {
+					for (Node node : nodes) {
 						
 						String line = String.valueOf(node.id()) + ' ' + ParseUtilities.intToString(node.distance());
 						
@@ -450,15 +469,19 @@ public class Main {
 						Node.reset(nodes);
 
 
+						logger.info("Start calculation");
+
 						startTime = System.nanoTime();
 						
 						// Calculate distances
-						Dijkstra.calculate(nodes, nodes[lastRequest], logger);
+						dijkstra.calculate(lastRequest);
 						
 						endTime = System.nanoTime();	
 
 
 						logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());	
+						
+						dijkstra.getResult(nodes);
 					}
 					
 					// Output result

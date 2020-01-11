@@ -25,9 +25,7 @@ public class Node {
 	// Reset the working values of the Dijkstra algorithm
 	public void reset() {
 		
-		_previous = null;
 		_distance = Integer.MAX_VALUE;
-		_entry = null;
 	}
 	
 	// Reset an array of nodes
@@ -57,28 +55,12 @@ public class Node {
 		_edges = edges;
 	}
 	
-	public Node previous() {
-		return _previous;
-	}
-	
-	public void setPrevious(Node previous) {
-		_previous = previous;
-	}
-	
 	public int distance() {
 		return _distance;
 	}
 	
 	public void setDistance(int distance) {
 		_distance = distance;
-	}
-	
-	public Queue.Entry entry() {
-		return _entry;
-	}
-	
-	public void setEntry(Queue.Entry entry) {
-		_entry = entry;
 	}
 	
 	
@@ -93,11 +75,6 @@ public class Node {
 	// Edges from this to another node
 	private Edge[] _edges;
 	
-	// Next node on the shortest path to a given start point
-	private Node _previous;
 	// Shortest distance from start point
 	private int _distance;
-	
-	// Entry in the priority queue
-	private Queue.Entry _entry;
 }
