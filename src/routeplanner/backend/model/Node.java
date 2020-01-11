@@ -18,21 +18,6 @@ public class Node {
 		_latitude = latitude;
 		_longitude = longitude;
 		_edges = edges;
-		
-		reset();
-	}
-	
-	// Reset the working values of the Dijkstra algorithm
-	public void reset() {
-		
-		_distance = Integer.MAX_VALUE;
-	}
-	
-	// Reset an array of nodes
-	public static void reset(Node[] nodes) {
-		
-		for (Node node : nodes)
-			node.reset();
 	}
 	
 	public int id() {

@@ -127,7 +127,8 @@ public class BinaryHeap {
 		
 		_size--;
 		
-		increaseKey(0, id(_size), key(_size));
+		if (_size != 0)
+			increaseKey(0, id(_size), key(_size));
 		
 		return first;
 	}

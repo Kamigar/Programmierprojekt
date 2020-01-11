@@ -465,9 +465,7 @@ public class Main {
 						
 						lastRequest = request[0];
 						
-						// Reset nodes for new calculation
-						Node.reset(nodes);
-
+						dijkstra.reset();
 
 						logger.info("Start calculation");
 

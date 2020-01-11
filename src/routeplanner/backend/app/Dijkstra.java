@@ -62,7 +62,6 @@ public class Dijkstra {
 			Edge[] edges = nodes[i].edges();
 			
 			int[] n = new int[edges.length * 2 + 1];
-			n[0] = Integer.MAX_VALUE;
 			
 			for (int j = 0; j < edges.length; j++) {
 				
@@ -72,6 +71,14 @@ public class Dijkstra {
 			
 			_data[i] = n;
 		}
+		reset();
+	}
+	
+	// Reset distances for new calculation
+	public void reset() {
+		
+		for (int i = 0; i < _data.length; i++)
+			setDistance(i, Integer.MAX_VALUE);
 	}
 	
 	private int edgeCount(int[] node) {
