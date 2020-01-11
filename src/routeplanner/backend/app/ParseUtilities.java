@@ -9,7 +9,7 @@ public class ParseUtilities {
 	public static String intToString(int value) {
 		
 		if (value == Integer.MAX_VALUE)
-			return "\u221E";
+			return "-1";
 		
 		return "" + value;
 	}

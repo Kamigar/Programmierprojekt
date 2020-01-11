@@ -1,7 +1,5 @@
 package routeplanner.backend.app;
 
-import java.io.IOException;
-
 import routeplanner.backend.model.*;
 
 /*
@@ -10,56 +8,103 @@ import routeplanner.backend.model.*;
 public class Dijkstra {
 	
 	// Calculate shortest paths from start to all other nodes
-	public static Node[] calculate(Node[] nodes, Node start, Logger logger) throws IOException {
-		
-		logger.info(System.lineSeparator() + "Prepare data for calculation");
-
-		Queue nodeList = new Queue();
-
-		int finishedIndex = 0;
-		Node[] finishedNodes = new Node[nodes.length];
+	public void calculate(int start) {
 		
 		// Initialize start node with distance 0
-		start.setDistance(0);
-		start.setEntry(nodeList.insert(start, 0));
-
-		logger.info("Calculate distances");
+		setDistance(start, 0);
+		_queue.insert(start, 0);
 		
-		while (!nodeList.isEmpty()) {
+		while (!_queue.isEmpty()) {
 			
 			// Remove next node from queue
-			Node current = nodeList.poll().node();
-			current.setEntry(null);
+			int[] current = _data[_queue.poll()];
+			int currentDistance = current[0];
 
-			finishedNodes[finishedIndex] = current;
-			finishedIndex++;
-			
-			for (Edge edge : current.edges()) {
+			for (int i = 0; i < edgeCount(current); i++) {
 				
 				// Check if there is an unknown (shorter) path
-				Node neighbour = edge.trg();
+				int neighbour = edgeTarget(current, i);
+				int newDistance = edgeCost(current, i) + currentDistance;
 				
-				int newDistance = current.distance() + edge.cost();
-				int oldDistance = neighbour.distance();
-				if (oldDistance > newDistance) {
-
-					neighbour.setDistance(newDistance);
-					neighbour.setPrevious(current);
+				if (newDistance < distance(neighbour)) {
 					
-					if (neighbour.entry() == null) {
-						// Add node to queue
-						neighbour.setEntry(nodeList.insert(neighbour, neighbour.distance()));
+					setDistance(neighbour, newDistance);
+					
+					if (_queue.contains(neighbour)) {
+						// Update (decrease) distance
+						_queue.decreaseKey(neighbour, newDistance);
 
 					} else {
-						// Update (decrease) distance
-						nodeList.decreaseKey(neighbour.entry(), neighbour.distance());
+						// Add node to queue
+						_queue.insert(neighbour, newDistance);
 					}
 				}
 			}
 		}
-		
-		logger.info("Calculation finished");
-		
-		return finishedNodes;
 	}
+
+	// Get the calculated distances
+	public void getResult(Node[] nodes) {
+		
+		for (int i = 0; i < _data.length; i++)
+			nodes[i].setDistance(distance(i));
+	}
+	
+	// Prepare data for calculation
+	public void prepare(Node[] nodes) {
+		
+		_queue = new BinaryHeap(nodes.length);
+
+		_data = new int[nodes.length][];
+		
+		for (int i = 0; i < nodes.length; i++) {
+			
+			Edge[] edges = nodes[i].edges();
+			
+			int[] n = new int[edges.length * 2 + 1];
+			
+			for (int j = 0; j < edges.length; j++) {
+				
+				n[j * 2 + 1] = edges[j].cost();
+				n[j * 2 + 2] = edges[j].trg().id();
+			}
+			
+			_data[i] = n;
+		}
+		reset();
+	}
+	
+	// Reset distances for new calculation
+	public void reset() {
+		
+		for (int i = 0; i < _data.length; i++)
+			setDistance(i, Integer.MAX_VALUE);
+	}
+	
+	private int edgeCount(int[] node) {
+		return (node.length - 1) / 2;
+	}
+	
+	private int edgeTarget(int[] source, int index) {
+		return source[index * 2 + 2];
+	}
+	
+	private int edgeCost(int[] source, int index) {
+		return source[index * 2 + 1];
+	}
+	
+	private int distance(int index) {
+		return _data[index][0];
+	}
+
+	private void setDistance(int index, int value) {
+		_data[index][0] = value;
+	}
+	
+
+	// Data for calculation
+	private int[][] _data = null;
+	
+	// Priority queue for non-finished nodes
+	BinaryHeap _queue = null;
 }
