@@ -1,13 +1,8 @@
 # routeplanner
 ## An efficient Dijkstra shortest path implementation
 
-## Build from source
+## Build
 
-If Gradle is installed
-```
-gradle build
-```
-else
 ```
 ./gradlew build
 ```

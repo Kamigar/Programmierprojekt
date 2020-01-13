@@ -2,7 +2,10 @@ apply plugin: 'java'
 apply plugin: 'application'
 
 mainClassName = 'routeplanner.backend.app.Main'
-sourceSets.main.java.srcDirs = ['src']
+sourceSets.main {
+  java.srcDirs = ['src']
+  resources.srcDirs = ['res']
+}
 
 applicationName = 'routeplanner'
 applicationDefaultJvmArgs = ["-Xmx6g"]
