@@ -1,21 +1,32 @@
 # routeplanner
 ## An efficient Dijkstra shortest path implementation
 
+## Build from source
+
+If Gradle is installed
+```
+gradle build
+```
+else
+```
+./gradlew build
+```
+
+The archive with all neccessary files is created under `build/distributions/routeplanner.tar`
 
 ## Installation
 
+Extract the archive and run the script
 ```
-.configure/configure.sh
-make
-sudo make install
+tar xfv routeplanner.tar
+routeplanner/bin/routeplanner [...]
 ```
-
-### Environment Variables
-
-VARIABLE | Default | Explanation
--|-|-
-`PREFIX` | `/usr/local` | The installation prefix
-
+If you don't want to specify the full path to run the program, link it to a location in your PATH variable
+```
+sudo tar xfv routeplanner.tar -C /usr/local/lib/
+sudo ln -sv /usr/local/lib/routeplanner/bin/routeplanner /usr/local/bin/
+routeplanner [...]
+```
 
 ## Usage
 
