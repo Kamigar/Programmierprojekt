@@ -1,14 +1,5 @@
 
-bin/*
-!bin/manifest.mf
-!bin/build.sh
-!bin/clean.sh
-!bin/install.sh
-!bin/uninstall.sh
+build/
 
-.settings
+.gradle
 
-.configure/prefix.var
-.configure/routeplanner
-
-/Programmierprojekt/
