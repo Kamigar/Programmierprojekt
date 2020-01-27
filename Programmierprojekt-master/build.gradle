@@ -1,9 +1,0 @@
-apply plugin: 'java'
-apply plugin: 'application'
-
-mainClassName = 'routeplanner.backend.app.Main'
-sourceSets.main.java.srcDirs = ['src']
-
-applicationName = 'routeplanner'
-applicationDefaultJvmArgs = ["-Xmx6g"]
-
