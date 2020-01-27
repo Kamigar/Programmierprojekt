@@ -1,5 +1,5 @@
 package routeplanner.backend.model;
-
+//prioqueue maybe
 import java.util.*;
 
 public class QuadTree {
@@ -89,15 +89,39 @@ public class QuadTree {
 
 		}
 
-		public Point nearestNeighbour(double x1, double y1) {
-			return this.point;
+		public int nearestNeighbour(double x1, double y1) {
+			Node quadrand = findQuadrand(x1,y1);
+			if(quadrand.point != null) {
+				//calculate distance to the point in the quadrant
+				int result = quadrand.point.id;
+				Double distance = Math.sqrt((quadrand.point.x - x1)*(quadrand.point.x - x1)+(quadrand.point.y - y1)*(quadrand.point.y - y1));
+				Rectangle query = new Rectangle(x1-distance, x1+distance,y1-distance,y1+distance);
+				//hier muss noch der fall dafür rein wenn der quadrand leer is ( mit parent) und wie man alle punkte findet die in der query drin sind
+			}
+			return 0;
 		}
-
+		
+		// find the node that contains the requested coordinates and only has one or zero points in it.
 		public Node findQuadrand(double x1, double y1) {
 
 			if (bl != null) {
 				if (bl.rect.contains(x1, y1)) {
-
+					return bl.findQuadrand(x1, y1);
+				}
+			}
+			if (br != null) {
+				if (br.rect.contains(x1, y1)) {
+					return br.findQuadrand(x1, y1);
+				}
+			}
+			if (tl != null) {
+				if (tl.rect.contains(x1, y1)) {
+					return tl.findQuadrand(x1, y1);
+				}
+			}
+			if (tr != null) {
+				if (tr.rect.contains(x1, y1)) {
+					return tr.findQuadrand(x1, y1);
 				}
 			}
 			return this;
@@ -107,23 +131,14 @@ public class QuadTree {
 	/*
 	 * Für den germany.fmi graphen: maxLat: 55.052937500000006minLat:
 	 * 47.284206700000006maxLong: 15.0834433minLong: 5.8630797 ----- Creating a
-	 * QuadTree with the root having to parent
+	 * QuadTree with the root having no parent
 	 */
 	public QuadTree(Rectangle rect) {
 		root = new Node(rect, null);
 	}
 
-	public static int recursion(int x) {
-		if (x > 10) {
-			return recursion(x - 1);
-		} else {
-			System.out.println("einmal pls");
-			return x;
-		}
-	}
 
 	// only for testing certain stuff
 	public static void main(String[] args) {
-		recursion(20);
 	}
 }
