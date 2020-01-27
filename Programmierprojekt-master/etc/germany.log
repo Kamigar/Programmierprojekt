@@ -1,0 +1,283 @@
+
+Reading graph
+
+Number of nodes in graph:
+Number of edges in graph:
+Header of file parsed successfully
+  25115477 nodes
+  50790030 edges
+
+Reading nodes. Input format: [nodeID] [nodeID2] [latitude] [longitude] [elevation]
+Nodes parsed
+
+Reading edges. Input format: [srcID] [trgID] [cost] [type] [maxspeed]
+Edges parsed
+
+Adjacency graph created
+
+25115477 nodes read in 35.819639154 seconds
+
+Input format: [srcID] [trgID] e.g. 18445 12343
+  use multiple lines for multiple requests
+  end input with <EOF> (CTRL+D)
+
+
+Prepare data for calculation
+Calculate distances
+Calculation finished
+Path calculated in 13.602359014 seconds
+
+Distance: 648681
+
+Distance: 649433
+
+Distance: 666379
+
+Distance: 648777
+
+Distance: 649372
+
+Distance: 649304
+
+Distance: 648885
+
+Distance: 649227
+
+Distance: 649163
+
+Distance: 648996
+
+
+Prepare data for calculation
+Calculate distances
+Calculation finished
+Path calculated in 15.3404916 seconds
+
+Distance: 643470
+
+Distance: 644222
+
+Distance: 661168
+
+Distance: 643566
+
+Distance: 644161
+
+Distance: 644093
+
+Distance: 643674
+
+Distance: 644016
+
+Distance: 643952
+
+Distance: 643785
+
+
+Prepare data for calculation
+Calculate distances
+Calculation finished
+Path calculated in 13.209347954 seconds
+
+Distance: 991950
+
+Distance: 992702
+
+Distance: 1009648
+
+Distance: 992046
+
+Distance: 992641
+
+Distance: 992573
+
+Distance: 992154
+
+Distance: 992496
+
+Distance: 992432
+
+Distance: 992265
+
+
+Prepare data for calculation
+Calculate distances
+Calculation finished
+Path calculated in 15.789606511 seconds
+
+Distance: 992243
+
+Distance: 992995
+
+Distance: 1009941
+
+Distance: 992339
+
+Distance: 992934
+
+Distance: 992866
+
+Distance: 992447
+
+Distance: 992789
+
+Distance: 992725
+
+Distance: 992558
+
+
+Prepare data for calculation
+Calculate distances
+Calculation finished
+Path calculated in 15.120328205 seconds
+
+Distance: 992534
+
+Distance: 993286
+
+Distance: 1010232
+
+Distance: 992630
+
+Distance: 993225
+
+Distance: 993157
+
+Distance: 992738
+
+Distance: 993080
+
+Distance: 993016
+
+Distance: 992849
+
+
+Prepare data for calculation
+Calculate distances
+Calculation finished
+Path calculated in 15.692727976 seconds
+
+Distance: 994232
+
+Distance: 994984
+
+Distance: 1011930
+
+Distance: 994328
+
+Distance: 994923
+
+Distance: 994855
+
+Distance: 994436
+
+Distance: 994778
+
+Distance: 994714
+
+Distance: 994547
+
+
+Prepare data for calculation
+Calculate distances
+Calculation finished
+Path calculated in 16.358189074 seconds
+
+Distance: 1136500
+
+Distance: 1137252
+
+Distance: 1157526
+
+Distance: 1136596
+
+Distance: 1137191
+
+Distance: 1137123
+
+Distance: 1136704
+
+Distance: 1137046
+
+Distance: 1136982
+
+Distance: 1136815
+
+
+Prepare data for calculation
+Calculate distances
+Calculation finished
+Path calculated in 15.864856773 seconds
+
+Distance: 1134297
+
+Distance: 1135049
+
+Distance: 1155323
+
+Distance: 1134393
+
+Distance: 1134988
+
+Distance: 1134920
+
+Distance: 1134501
+
+Distance: 1134843
+
+Distance: 1134779
+
+Distance: 1134612
+
+
+Prepare data for calculation
+Calculate distances
+Calculation finished
+Path calculated in 14.519916596 seconds
+
+Distance: 1134714
+
+Distance: 1135466
+
+Distance: 1155740
+
+Distance: 1134810
+
+Distance: 1135405
+
+Distance: 1135337
+
+Distance: 1134918
+
+Distance: 1135260
+
+Distance: 1135196
+
+Distance: 1135029
+
+
+Prepare data for calculation
+Calculate distances
+Calculation finished
+Path calculated in 14.472276128 seconds
+
+Distance: 1133712
+
+Distance: 1134464
+
+Distance: 1154738
+
+Distance: 1133808
+
+Distance: 1134403
+
+Distance: 1134335
+
+Distance: 1133916
+
+Distance: 1134258
+
+Distance: 1134194
+
+Distance: 1134027
+

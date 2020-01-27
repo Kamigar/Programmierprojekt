@@ -1,0 +1,77 @@
+
+routeplanner - An efficient Dijkstra shortest path implementation
+
+Usage: routeplanner [OPTION]...
+
+OPTIONS:
+
+-h, --help                      Display this help page
+
+
+The program operates on 2 input (default: stdin) and 2 output (default: stdout) streams.
+
+-i, --input-file <file>         Description of the graph structure
+  [default: stdin]                Input format: [total number of nodes]
+                                                [total number of edges]
+                                                FOR EACH NODE:
+                                                  [nodeID] [nodeID2] [latitude] [longitude] [elevation]
+                                                FOR EACH EDGE:
+                                                  [srcID] [trgID] [cost] [type] [maxspeed]
+
+-r, --request-file <file>       List of distances to calculate
+  [default: stdin]                Note: Omit [srcID] if --one-to-many is used
+                                  Input format: FOR EACH ROUTE:
+                                                  [srcID] [trgID]
+
+-o, --output-file <file>        Output of the calculated distances
+  [default: stdout]               Output format: FOR EACH ROUTE:
+                                                   [cost]
+
+-l, --log-file <file>           Log output of the program
+  [default: stdout]               
+
+
+Also there is the option to start a single one-to-all or one-to-many calculation.
+
+-ota, --one-to-all <srcID>      Calculate all distances from start point <srcID>
+
+-otm, --one-to-many <srcID>     Calculate distances from start point <srcID>
+
+
+The log verbosity defaults to --warning (--quiet if --output-file is same as --log-file).
+
+-w, --warning                   Log warnings and errors
+
+-q, --quiet                     Log only errors
+
+-v, --verbose                   Log additional information about the calculation process
+
+
+By default the program terminates, if there is an error in the input file(s).
+
+-t, --tolerant                  Ignore input errors and try again
+
+
+*******************************************************************************************************
+
+Interactive use:
+
+  For interactive use of the program, the options -v and -t are very useful.
+
+    Only user input:
+      routeplanner -v -t
+
+    Graph structure from file, distance request from user:
+      routeplanner -v -t -i graph.fmi
+
+
+Working with pipes:
+
+  Because the default input/output streams are stdin/stdout, the program could be used with UNIX pipes.
+
+    Read graph and requests from different files and write distances to a third file with pipes:
+      (cat graph.fmi; cat requests.que) | routeplanner > distances.ist
+
+    Read graph and requests from different files and print only the calculation time:
+      (cat graph.fmi; cat requests.que) | routeplanner -v | grep seconds
+
