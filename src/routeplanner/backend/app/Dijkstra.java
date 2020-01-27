@@ -20,6 +20,11 @@ public class Dijkstra {
 			int[] current = _data[_queue.poll()];
 			int currentDistance = current[0];
 
+			if (currentDistance < 0)
+				continue;
+
+			current[0] = -currentDistance;
+
 			for (int i = 0; i < edgeCount(current); i++) {
 				
 				// Check if there is an unknown (shorter) path
@@ -30,14 +35,8 @@ public class Dijkstra {
 					
 					setDistance(neighbour, newDistance);
 					
-					if (_queue.contains(neighbour)) {
-						// Update (decrease) distance
-						_queue.decreaseKey(neighbour, newDistance);
-
-					} else {
-						// Add node to queue
-						_queue.insert(neighbour, newDistance);
-					}
+					// Add node with new distance to queue
+					_queue.insert(neighbour, newDistance);
 				}
 			}
 		}
@@ -47,7 +46,7 @@ public class Dijkstra {
 	public void getResult(Node[] nodes) {
 		
 		for (int i = 0; i < _data.length; i++)
-			nodes[i].setDistance(distance(i));
+			nodes[i].setDistance(-distance(i));
 	}
 	
 	// Prepare data for calculation
