@@ -1,4 +1,5 @@
 package routeplanner.backend.model;
+
 //prioqueue maybe
 import java.util.*;
 
@@ -19,11 +20,13 @@ public class QuadTree {
 
 		// check if a point is within the bounding box of a rectangle
 		public boolean contains(double x, double y) {
-			return (l <= x && x <= r) && (b <= y && y <= t);
+			return (Double.compare(l, x) <= 0 && Double.compare(x, r) <= 0)
+					&& (Double.compare(b, y) <= 0 && Double.compare(y, t) <= 0);
 		}
 
 		public boolean intersects(Rectangle query) {
-			return !(query.l > r || query.r < l || query.b > t || query.t < b);
+			return !(Double.compare(query.l, r) > 0 || Double.compare(query.r, l) < 0 || Double.compare(query.b, t) > 0
+					|| Double.compare(query.t, b) < 0);
 		}
 	}
 
@@ -37,6 +40,10 @@ public class QuadTree {
 			this.y = y;
 		}
 
+		public double distance(double x1, double y1) {
+			return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
+		}
+
 		public int getID() {
 			return id;
 		}
@@ -48,11 +55,11 @@ public class QuadTree {
 		private Node tl, tr, bl, br, parent;
 		private boolean hasPoint;
 
-		public Node(Rectangle rect, Node parent) {
+		private Node(Rectangle rect, Node parent) {
 			this.rect = rect;
 		}
 
-		public boolean add(Point p) {
+		private boolean add(Point p) {
 			if (!rect.contains(p.x, p.y)) {
 				return false;
 			}
@@ -89,20 +96,65 @@ public class QuadTree {
 
 		}
 
-		public int nearestNeighbour(double x1, double y1) {
-			Node quadrand = findQuadrand(x1,y1);
-			if(quadrand.point != null) {
-				//calculate distance to the point in the quadrant
-				int result = quadrand.point.id;
-				Double distance = Math.sqrt((quadrand.point.x - x1)*(quadrand.point.x - x1)+(quadrand.point.y - y1)*(quadrand.point.y - y1));
-				Rectangle query = new Rectangle(x1-distance, x1+distance,y1-distance,y1+distance);
-				//hier muss noch der fall dafür rein wenn der quadrand leer is ( mit parent) und wie man alle punkte findet die in der query drin sind
+		private int nearestNeighbour(double x1, double y1) {
+			Node quadrand = findQuadrand(x1, y1);
+			int result;
+			Double distance;
+			Rectangle query;
+			if (quadrand.hasPoint) {
+				// calculate distance to the point in the quadrant
+				result = quadrand.point.getID();
+				distance = quadrand.point.distance(x1, y1);
+				query = new Rectangle(x1 - distance, x1 + distance, y1 - distance, y1 + distance);
+				// hier muss noch der fall dafür rein wenn der quadrand leer is ( mit parent)
+				// und wie man alle punkte findet die in der query drin sind
+
+			} else {
+				quadrand = quadrand.parent;
+				result = quadrand.point.getID();
+				distance = Math.sqrt((quadrand.point.x - x1) * (quadrand.point.x - x1)
+						+ (quadrand.point.y - y1) * (quadrand.point.y - y1));
+				query = new Rectangle(x1 - distance, x1 + distance, y1 - distance, y1 + distance);
 			}
-			return 0;
+			List<Point> candidates = new ArrayList<>();
+			findPoints(query, candidates);
+			for (Point candidate : candidates) {
+				// could theoretically square the initial distance and make another distance
+				// method
+				// without having to take the square root for performance
+				result = Double.compare(candidate.distance(x1, y1), distance) < 0 ? candidate.getID() : result;
+			}
+
+			return result;
 		}
-		
-		// find the node that contains the requested coordinates and only has one or zero points in it.
-		public Node findQuadrand(double x1, double y1) {
+
+		private void findPoints(Rectangle query, List<Point> list) {
+			if (rect != null) {
+				if (query.intersects(rect)) {
+					if (hasPoint) {
+						if (query.contains(point.x, point.y)) {
+							list.add(point);
+						}
+					}
+				}
+			}
+			if (bl != null) {
+				bl.findPoints(query, list);
+			}
+			if (br != null) {
+				br.findPoints(query, list);
+			}
+			if (tl != null) {
+				tl.findPoints(query, list);
+			}
+			if (tr != null) {
+				tr.findPoints(query, list);
+			}
+		}
+
+		// find the node that contains the requested coordinates and only has one or
+		// zero points in it.
+		private Node findQuadrand(double x1, double y1) {
 
 			if (bl != null) {
 				if (bl.rect.contains(x1, y1)) {
@@ -137,6 +189,13 @@ public class QuadTree {
 		root = new Node(rect, null);
 	}
 
+	public boolean add(Point p) {
+		return root.add(p);
+	}
+
+	public int nearestNeighbour(double x1, double y1) {
+		return root.nearestNeighbour(x1, y1);
+	}
 
 	// only for testing certain stuff
 	public static void main(String[] args) {

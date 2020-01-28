@@ -3,7 +3,6 @@ package routeplanner.backend.app;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Arrays;
-
 import routeplanner.backend.model.*;
 
 /*
@@ -336,7 +335,7 @@ public class FileScanner {
 		for (int i = 0; i < cnt[0]; i++) {
 			
 			FmiNode t = readNode(reader, pos, nodes, logger, isTolerant);
-
+			
 			nodes[t.id()] = new Node(t.id(), t.latitude(), t.longitude(), new Edge[0]);
 		}
 		

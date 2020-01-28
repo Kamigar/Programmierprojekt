@@ -201,7 +201,8 @@ public class Main {
 
 				// Note: Assuming 'etc/help.txt' is accessible
 				FileInputStream reader = new FileInputStream("etc/help.txt");
-				byte[] data = reader.readAllBytes();
+				byte[] data = new byte[1024];
+				reader.read(data);
 				
 				System.out.print(new String(data, "UTF-8"));
 
