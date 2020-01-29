@@ -76,8 +76,9 @@ public class Main {
 
 	/*
 	 * Parameters for the program execution
+	 * made public for JUnit use
 	 */
-	private static class Parameters {
+	public static class Parameters {
 		
 		public BufferedReader structureIn = null;
 		public BufferedReader requestIn = null;
@@ -90,7 +91,8 @@ public class Main {
 	}
 	
 	// Read command line parameters
-	private static Parameters readParameters(String[] args)
+	//made this public so this can be used for the JUnit test
+	public static Parameters readParameters(String[] args)
 			throws BadParameterException, IOException {
 		
 		Parameters p = new Parameters();

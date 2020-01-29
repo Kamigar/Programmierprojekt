@@ -3,6 +3,8 @@ package routeplanner.backend.model;
 //prioqueue maybe
 import java.util.*;
 
+import com.sun.media.jfxmedia.logging.Logger;
+
 public class QuadTree {
 	public Node root;
 
@@ -30,8 +32,8 @@ public class QuadTree {
 		}
 	}
 
-	public class Point {
-		private double x, y;
+	public static class Point {
+		public double x, y;
 		private int id;
 
 		public Point(double x, double y, int id) {
@@ -57,6 +59,7 @@ public class QuadTree {
 
 		private Node(Rectangle rect, Node parent) {
 			this.rect = rect;
+			this.parent = parent;
 		}
 
 		private boolean add(Point p) {
@@ -99,56 +102,65 @@ public class QuadTree {
 		private int nearestNeighbour(double x1, double y1) {
 			Node quadrand = findQuadrand(x1, y1);
 			int result;
-			Double distance;
+			double distance;
 			Rectangle query;
+			double cdistance;
 			if (quadrand.hasPoint) {
 				// calculate distance to the point in the quadrant
 				result = quadrand.point.getID();
 				distance = quadrand.point.distance(x1, y1);
 				query = new Rectangle(x1 - distance, x1 + distance, y1 - distance, y1 + distance);
-				// hier muss noch der fall dafür rein wenn der quadrand leer is ( mit parent)
-				// und wie man alle punkte findet die in der query drin sind
 
 			} else {
 				quadrand = quadrand.parent;
 				result = quadrand.point.getID();
-				distance = Math.sqrt((quadrand.point.x - x1) * (quadrand.point.x - x1)
-						+ (quadrand.point.y - y1) * (quadrand.point.y - y1));
+				distance = quadrand.point.distance(x1, y1);
+				// we might create a circle of radius d(x1,y1) for better performance when
+				// needed
 				query = new Rectangle(x1 - distance, x1 + distance, y1 - distance, y1 + distance);
 			}
-			List<Point> candidates = new ArrayList<>();
+			ArrayList<Point> candidates = new ArrayList<>();
 			findPoints(query, candidates);
 			for (Point candidate : candidates) {
-				// could theoretically square the initial distance and make another distance
-				// method
-				// without having to take the square root for performance
-				result = Double.compare(candidate.distance(x1, y1), distance) < 0 ? candidate.getID() : result;
-			}
+				cdistance = candidate.distance(x1, y1);
+				if (Double.compare(cdistance, distance) < 0) {
+					result = candidate.getID();
+					distance = cdistance;
+				}
 
+			}
 			return result;
 		}
 
-		private void findPoints(Rectangle query, List<Point> list) {
+		// find all the points that the query rectangle contains
+		private void findPoints(Rectangle query, ArrayList<Point> list) {
 			if (rect != null) {
-				if (query.intersects(rect)) {
-					if (hasPoint) {
-						if (query.contains(point.x, point.y)) {
-							list.add(point);
-						}
+				if (hasPoint) {
+					if (query.contains(point.x, point.y)) {
+						list.add(point);
 					}
+
 				}
 			}
 			if (bl != null) {
-				bl.findPoints(query, list);
+				if (query.intersects(bl.rect)) {
+					bl.findPoints(query, list);
+				}
 			}
 			if (br != null) {
-				br.findPoints(query, list);
+				if (query.intersects(br.rect)) {
+					br.findPoints(query, list);
+				}
 			}
 			if (tl != null) {
-				tl.findPoints(query, list);
+				if (query.intersects(tl.rect)) {
+					tl.findPoints(query, list);
+				}
 			}
 			if (tr != null) {
-				tr.findPoints(query, list);
+				if (query.intersects(tr.rect)) {
+					tr.findPoints(query, list);
+				}
 			}
 		}
 
