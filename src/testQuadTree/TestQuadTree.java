@@ -6,9 +6,13 @@ import java.io.IOException;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import routeplanner.backend.model.Edge;
+import routeplanner.backend.model.FmiNode;
 import routeplanner.backend.model.Node;
 import routeplanner.backend.model.QuadTree;
 import routeplanner.backend.app.Main;
+import routeplanner.backend.app.FileScanner.StringPosition;
 import routeplanner.backend.app.Logger;
 import routeplanner.backend.app.Main.Parameters;
 import routeplanner.backend.app.FileScanner;
@@ -27,19 +31,20 @@ public class TestQuadTree {
 	double averageQT = 0;
 	double timeIn;
 	double timeQuad;
-
+	int[] count;
 	@Before
 	public void beforeTest() {
 		try {
+			count = new int[2];
 			args[0] = "-v";
 			args[1] = "-t";
 			args[2] = "-i";
 			// input the graph txtfile location
-			args[3] = "C:\\Users\\kamig\\Desktop\\bw.fmi";
+			args[3] = "/home/evcihn/Desktop/germany.fmi";
 			param = Main.readParameters(args);
+			StringPosition pos = new StringPosition();
 			logger = new Logger(param.logLevel, param.logOut);
 			nodes = FileScanner.readStructure(param.structureIn, logger, param.isTolerant);
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -67,14 +72,14 @@ public class TestQuadTree {
 				maxLong = lng;
 			}
 		}
+		logger.info(" "+ minLat + " " + maxLat + " " + minLong + " " + maxLong);
 		// create quadtree
 		double startTime;
 		double endTime;
 		startTime = System.nanoTime();
 		QuadTree tree = new QuadTree(new Rectangle(minLat, maxLat, minLong, maxLong));
 		for (int i = 0; i < nodes.length; i++) {
-			Point p = new Point(nodes[i].latitude(), nodes[i].longitude(), nodes[i].id());
-			tree.add(p);
+			tree.add(nodes[i].latitude(), nodes[i].longitude(), nodes[i].id());
 		}
 		endTime = System.nanoTime();
 		logger.info("Creating the QuadTree took " + (endTime - startTime) / 1000000 + " milliseconds ");
@@ -83,6 +88,7 @@ public class TestQuadTree {
 			points[i] = new Point(nodes[i].latitude(), nodes[i].longitude(), nodes[i].id());
 		}
 		for (int i = 0; i < 100; i++) {
+			
 			double x = Math.random() * (maxLat - minLat) + minLat;
 			double y = Math.random() * (maxLong - minLong) + minLong;
 			int nearestNeighbour = 0;
@@ -103,11 +109,11 @@ public class TestQuadTree {
 			timeI[i] = timeIn;
 			// QuadTree implementation
 			startTime = System.nanoTime();
-			nearestNeighbourQT = tree.nearestNeighbour(x, y);
+			nearestNeighbourQT = tree.nearestNeighbour(x,y);
 			endTime = System.nanoTime();
 			timeQuad = endTime - startTime;
 			timeQT[i] = timeQuad;
-			logger.info("times are " +timeQuad/1000000+ " " + timeIn/1000000 );
+			logger.info("times are " +timeQuad/1000000 + " " + timeIn/1000000 );
 			// check if the nearest neighbour calculated by the quad tree is the actual one
 			assertEquals(nearestNeighbourQT,nearestNeighbour);
 			
