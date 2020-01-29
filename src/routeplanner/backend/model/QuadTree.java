@@ -3,8 +3,6 @@ package routeplanner.backend.model;
 //prioqueue maybe
 import java.util.*;
 
-import com.sun.media.jfxmedia.logging.Logger;
-
 public class QuadTree {
 	public Node root;
 
@@ -42,17 +40,22 @@ public class QuadTree {
 			this.y = y;
 		}
 
-		public double distance(double x1, double y1) {
-			return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
-		}
-
 		public int getID() {
 			return id;
 		}
 	}
 
+	public double distance(double x1, double y1, double x2, double y2) {
+		return Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+	}
+
+	public double sdistance(double x1, double y1, double x2, double y2) {
+		return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+	}
+
 	public class Node {
-		private Point point;
+		private double x, y;
+		private int id;
 		private Rectangle rect;
 		private Node tl, tr, bl, br, parent;
 		private boolean hasPoint;
@@ -62,13 +65,15 @@ public class QuadTree {
 			this.parent = parent;
 		}
 
-		private boolean add(Point p) {
-			if (!rect.contains(p.x, p.y)) {
+		private boolean add(double x1, double y1, int id1) {
+			if (!rect.contains(x1, y1)) {
 				return false;
 			}
 			if (!hasPoint) {
 				hasPoint = true;
-				point = p;
+				x = x1;
+				y = y1;
+				id = id1;
 				return true;
 			}
 			// calculate the middle of the rectangle sides
@@ -77,25 +82,25 @@ public class QuadTree {
 			if (bl == null) {
 				bl = new Node(new Rectangle(rect.l, mx, rect.b, my), this);
 			}
-			if (bl.add(p)) {
+			if (bl.add(x1, y1, id1)) {
 				return true;
 			}
 			if (br == null) {
 				br = new Node(new Rectangle(mx, rect.r, rect.b, my), this);
 			}
-			if (br.add(p)) {
+			if (br.add(x1, y1, id1)) {
 				return true;
 			}
 			if (tl == null) {
 				tl = new Node(new Rectangle(rect.l, mx, my, rect.t), this);
 			}
-			if (tl.add(p)) {
+			if (tl.add(x1, y1, id1)) {
 				return true;
 			}
 			if (tr == null) {
 				tr = new Node(new Rectangle(mx, rect.r, my, rect.t), this);
 			}
-			return tr.add(p);
+			return tr.add(x1, y1, id1);
 
 		}
 
@@ -104,28 +109,28 @@ public class QuadTree {
 			int result;
 			double distance;
 			Rectangle query;
-			double cdistance;
+			double newdistance;
 			if (quadrand.hasPoint) {
 				// calculate distance to the point in the quadrant
-				result = quadrand.point.getID();
-				distance = quadrand.point.distance(x1, y1);
+				result = quadrand.id;
+				distance = distance(quadrand.x, quadrand.y, x1, y1);
 				query = new Rectangle(x1 - distance, x1 + distance, y1 - distance, y1 + distance);
+				distance *= distance;
 
 			} else {
 				quadrand = quadrand.parent;
-				result = quadrand.point.getID();
-				distance = quadrand.point.distance(x1, y1);
-				// we might create a circle of radius d(x1,y1) for better performance when
-				// needed
+				result = quadrand.id;
+				distance = distance(quadrand.x, quadrand.y, x1, y1);
 				query = new Rectangle(x1 - distance, x1 + distance, y1 - distance, y1 + distance);
+				distance *= distance;
 			}
-			ArrayList<Point> candidates = new ArrayList<>();
+			ArrayList<Point> candidates = new ArrayList<Point>();
 			findPoints(query, candidates);
 			for (Point candidate : candidates) {
-				cdistance = candidate.distance(x1, y1);
-				if (Double.compare(cdistance, distance) < 0) {
+				newdistance = sdistance(candidate.x, candidate.y, x1, y1);
+				if (Double.compare(newdistance, distance) < 0) {
 					result = candidate.getID();
-					distance = cdistance;
+					distance = newdistance;
 				}
 
 			}
@@ -136,30 +141,38 @@ public class QuadTree {
 		private void findPoints(Rectangle query, ArrayList<Point> list) {
 			if (rect != null) {
 				if (hasPoint) {
-					if (query.contains(point.x, point.y)) {
-						list.add(point);
+					if (query.contains(x, y)) {
+						list.add(new Point(x, y, id));
 					}
 
 				}
 			}
 			if (bl != null) {
-				if (query.intersects(bl.rect)) {
-					bl.findPoints(query, list);
+				if (bl.hasPoint) {
+					if (query.intersects(bl.rect)) {
+						bl.findPoints(query, list);
+					}
 				}
 			}
 			if (br != null) {
-				if (query.intersects(br.rect)) {
-					br.findPoints(query, list);
+				if (br.hasPoint) {
+					if (query.intersects(br.rect)) {
+						br.findPoints(query, list);
+					}
 				}
 			}
 			if (tl != null) {
-				if (query.intersects(tl.rect)) {
-					tl.findPoints(query, list);
+				if (tl.hasPoint) {
+					if (query.intersects(tl.rect)) {
+						tl.findPoints(query, list);
+					}
 				}
 			}
 			if (tr != null) {
-				if (query.intersects(tr.rect)) {
-					tr.findPoints(query, list);
+				if (tr.hasPoint) {
+					if (query.intersects(tr.rect)) {
+						tr.findPoints(query, list);
+					}
 				}
 			}
 		}
@@ -188,7 +201,8 @@ public class QuadTree {
 					return tr.findQuadrand(x1, y1);
 				}
 			}
-			return this;
+			Node quadrand = this;
+			return quadrand;
 		}
 	}
 
@@ -201,8 +215,8 @@ public class QuadTree {
 		root = new Node(rect, null);
 	}
 
-	public boolean add(Point p) {
-		return root.add(p);
+	public boolean add(double x1, double y1, int id) {
+		return root.add(x1, y1, id);
 	}
 
 	public int nearestNeighbour(double x1, double y1) {
