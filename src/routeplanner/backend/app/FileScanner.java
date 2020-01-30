@@ -363,6 +363,57 @@ public class FileScanner {
 		return nodes;
 	}
 	
+	// Read a longitude and latitude (request for next node)
+	public static double[] readCoordinates(BufferedReader reader, StringPosition pos,
+			Logger logger, boolean isTolerant) throws BadRequestException, IOException {
+		
+		try {
+			
+			getNextRelevantLine(pos, reader);
+
+			if (pos.string == null)
+				return null;
+				
+			double latitude;
+			int end = skipFloat(pos.string, pos.index);
+			try {
+				latitude = Double.parseDouble(pos.string.substring(pos.index, end));
+			} catch (NumberFormatException ex) {
+				throw new BadRequestException("No latitude provided [double]");
+			}
+			
+			pos.index = skipWhitespace(pos.string, end);
+			
+			double longitude;
+			end = skipFloat(pos.string, pos.index);
+			try {
+				longitude = Double.parseDouble(pos.string.substring(pos.index, end));
+			} catch (NumberFormatException ex) {
+				throw new BadRequestException("No longitude provided [double]");
+			}
+			
+			end = skipWhitespace(pos.string, end);
+			if (end < pos.string.length())
+				throw new BadRequestException("Unexpected data in line");	
+
+			return new double[] { longitude, latitude };
+
+		} catch (BadRequestException ex) {
+			
+			if (isTolerant) {
+				
+				logger.warning(System.lineSeparator() + ex.getMessage());
+				logger.warning("Error in request. Try again...");
+				
+				return readCoordinates(reader, pos, logger, isTolerant);
+				
+			} else {
+				
+				throw ex;
+			}
+		}
+	}
+
 	// Read a node ID (request for one-to-many or next node)
 	public static int readId(BufferedReader reader, StringPosition pos,
 			int maxId, Logger logger, boolean isTolerant) throws BadRequestException, IOException {

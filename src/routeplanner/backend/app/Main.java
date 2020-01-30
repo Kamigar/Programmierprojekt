@@ -69,11 +69,15 @@ public class Main {
 		public BadParameterException(String detail) { super(detail); }
 	}
 	
+	/*
+	 * Calculation modes of the program
+	 */
 	static enum Mode {
-		OTO,
-		OTA,
-		OTM,
-		NNI,
+		OTO, // one-to-one
+		OTA, // one-to-all
+		OTM, // one-to-many
+		NNI, // next-node-iterative
+		NNF, // next-node-fast
 	}
 
 	/*
@@ -180,6 +184,12 @@ public class Main {
 				p.mode = Mode.NNI;
 				break;
 				
+			case "--next-node-fast":
+			case "-nnf":
+				
+				p.mode = Mode.NNF;
+				break;
+				
 			case "--tolerant":
 			case "-t":
 				
@@ -284,8 +294,6 @@ public class Main {
 		logger.info("Run garbage collection");
 
 		Runtime.getRuntime().gc();
-
-		logger.info(System.lineSeparator() + "Initialization finished");
 	}
 
 	// Main function
@@ -360,21 +368,32 @@ public class Main {
 				
 				DijkstraApp dijkstra = new DijkstraApp();
 
-				dijkstra.prepare(nodes);
+				startTime = System.nanoTime();
 				
+				dijkstra.prepare(nodes);
 				finishInitialization(logger);
+
+				endTime = System.nanoTime();
+				
+				logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
 
 				// Run Dijkstra calculation
 				dijkstra.run(param, nodes, logger);
 				break;
 				
 			case NNI:
+			case NNF:
 				
 				NextNodeApp nextNode = new NextNodeApp();
 				
-				nextNode.prepare(nodes);
+				startTime = System.nanoTime();
 				
+				nextNode.prepare(nodes);
 				finishInitialization(logger);
+
+				endTime = System.nanoTime();
+
+				logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
 
 				// Run next node calculation
 				nextNode.run(param, nodes, logger);

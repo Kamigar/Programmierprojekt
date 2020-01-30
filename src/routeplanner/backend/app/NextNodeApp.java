@@ -11,24 +11,28 @@ public class NextNodeApp {
 	
 	// Prepare data for calculation
 	public void prepare(Node[] nodes) {
+		
+		_nextNode = new NextNode();
+		
+		_nextNode.prepare(nodes);
 	}
-
+	
 	// Run next node calculation
 	public void run(Main.Parameters param, Node[] nodes, Logger logger) throws IOException, Main.FatalFailure {
 		
 		logger.info(System.lineSeparator()
-				+ "Input format: [srcID] e.g. 18445" + System.lineSeparator()
+				+ "Input format: [latitude] [longitude] e.g. 49.2 9.8" + System.lineSeparator()
 				+ "  use multiple lines for multiple requests" + System.lineSeparator()
 				+ "  end input with <EOF> (CTRL+D)" + System.lineSeparator());
 
 		FileScanner.StringPosition pos = new FileScanner.StringPosition();
 		while (true) {
 
-			int srcId;
+			double[] req;
 			try {
 				
-				// Read source request
-				srcId = FileScanner.readId(param.requestIn, pos, nodes.length, logger, param.isTolerant);
+				// Read request
+				req = FileScanner.readCoordinates(param.requestIn, pos, logger, param.isTolerant);
 				
 			} catch (FileScanner.BadRequestException ex) {
 				
@@ -38,28 +42,60 @@ public class NextNodeApp {
 				throw new Main.FatalFailure(Main.Code.BAD_REQUEST, "Bad request provided");
 			}	
 			
-			// Note: No 'while (srcId != -1) {...}' loop used
-			//   to prevent code duplication of 'FileScanner.readId(...)'
-			if (srcId == -1)
-				break;	
+			// Note: No 'while (req != null) {...}' loop used
+			//   to prevent code duplication of 'FileScanner.readCoordinates(...)'
+			if (req == null)
+				break;
 			
+			
+			double distance;
+			long startTime, endTime;
 
-			long startTime = System.nanoTime();
+			// Search for nearest node
+			switch (param.mode) {
+			
+			case NNI:
+				
+				startTime = System.nanoTime();
+				
+				distance = _nextNode.findNextIterative(req[0], req[1]);
+				
+				endTime = System.nanoTime();
+				break;
 
-			// Search next node
-			Node next = NextNode.calculateIterative(nodes, nodes[srcId]);
+			case NNF:
+				
+				startTime = System.nanoTime();
+				
+				distance = _nextNode.findNext(req[0], req[1]);
+				
+				endTime = System.nanoTime();
+				break;
+
+			default:
+				// Should never happen
+				distance = Double.NaN; startTime = 0; endTime = 0;
+				break;
+			}
 			
-			long endTime = System.nanoTime();
+			logger.info("Nearest node found in " + (double)(endTime - startTime) / 1000000 + " ms" + System.lineSeparator());
 			
-			logger.info("Next node found in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());
-			
+			Node[] result = _nextNode.getResult(nodes);
 
 			// Output result
 			
-			param.requestOut.write("" + next.id());
+			param.requestOut.write("" + distance);
+			for (Node n : result)
+				param.requestOut.write(" " + n.id());
 			param.requestOut.newLine();
-			
-			logger.info("Next node: " + next.id() + System.lineSeparator());
+
+			for (Node n : result)
+				logger.info("Node: " + n.id() + " latitude: " + n.latitude() + " longitude: " + n.longitude());
+			logger.info("Distance: " + distance + System.lineSeparator());
 		}
 	}
+	
+	
+	// Next node algorithm implementation
+	private NextNode _nextNode;
 }
