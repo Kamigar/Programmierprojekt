@@ -45,8 +45,14 @@ public class Dijkstra {
 	// Get the calculated distances
 	public void getResult(Node[] nodes) {
 		
-		for (int i = 0; i < _data.length; i++)
-			nodes[i].setDistance(-distance(i));
+		for (int i = 0; i < _data.length; i++) {
+			
+			int d = -distance(i);
+			if (d < 0)
+				d = -1;
+			
+			nodes[i].setDistance(d);
+		}
 	}
 	
 	// Prepare data for calculation

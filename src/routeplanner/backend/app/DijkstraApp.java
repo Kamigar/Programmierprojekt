@@ -53,7 +53,7 @@ public class DijkstraApp {
 				// Output result
 				for (Node node : nodes) {
 					
-					String line = String.valueOf(node.id()) + ' ' + ParseUtilities.intToString(node.distance());
+					String line = "" + node.id() + " " + node.distance();
 					
 					param.requestOut.write(line);
 					param.requestOut.newLine();
@@ -95,12 +95,10 @@ public class DijkstraApp {
 
 					Node dst = nodes[trgId];
 
-					String distance = ParseUtilities.intToString(dst.distance());
-
-					param.requestOut.write(distance);
+					param.requestOut.write("" + dst.distance());
 					param.requestOut.newLine();
 
-					logger.info("Distance: " + distance + System.lineSeparator());
+					logger.info("Distance: " + dst.distance() + System.lineSeparator());
 				}
 			}
 		
@@ -160,12 +158,10 @@ public class DijkstraApp {
 
 				Node dst = nodes[request[1]];
 
-				String distance = ParseUtilities.intToString(dst.distance());
-
-				param.requestOut.write(distance);
+				param.requestOut.write("" + dst.distance());
 				param.requestOut.newLine();
 
-				logger.info("Distance: " + distance + System.lineSeparator());
+				logger.info("Distance: " + dst.distance() + System.lineSeparator());
 			}	
 		}	
 	}
