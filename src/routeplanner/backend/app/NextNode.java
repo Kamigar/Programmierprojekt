@@ -36,6 +36,12 @@ public class NextNode {
 		return result.toArray(new Node[0]);
 	}
 	
+	// Return the minimum bounding box of the graph
+	public double[] minimumBoundingBox() {
+
+		return _bounds;
+	}
+	
 	// Find next nodes to point (longitude, latitude) iteratively
 	public double findNextIterative(double longitude, double latitude) {
 		
@@ -147,6 +153,7 @@ public class NextNode {
 			return x.longitude() < y.longitude() ? -1 : 1;
 		});
 		
+		_bounds = new double[] { Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY };
 		_data = new double[sorted.length][];
 		int dataSize = 0;
 		
@@ -165,7 +172,16 @@ public class NextNode {
 
 			for (int k = i; k < j; k++)
 				location[k - i + 2] = sorted[k].id();
-				
+
+			if (x < _bounds[0])
+				_bounds[0] = x;
+			if (y < _bounds[1])
+				_bounds[1] = y;
+			if (x > _bounds[2])
+				_bounds[2] = x;
+			if (y > _bounds[3])
+				_bounds[3] = y;
+
 			_data[dataSize] = location;
 			dataSize++;
 			
@@ -201,7 +217,7 @@ public class NextNode {
 		int pos = (right - left) / 2;
 
 		TreeNode t = new TreeNode();
-
+		
 		// Find median (element on position 'pos')
 		t.value = getPosition(property, nodes, left, right, pos);
 		
@@ -216,7 +232,7 @@ public class NextNode {
 	private static double getPosition(int property, double[][] nodes, int left, int right, int pos) {
 		
 		// Partition elements into two parts (use value in the middle as pivot)
-		int pivot = partition(property, nodes, left, right, nodes[left + pos][property]);
+		int pivot = partition(property, nodes, left, right, left + pos);
 		int pivotPos = pivot - left;
 		
 		// Continue search in right or left part
@@ -229,22 +245,23 @@ public class NextNode {
 		return nodes[pivot][property];
 	}
 	
-	// Partition elements into two parts (values less or equal than pivot left, greater than pivot right)
-	private static int partition(int property, double[][] nodes, int left, int right, double pivot) {
+	// Partition elements into two parts (values less or equal than pivot left, greater or equal pivot right)
+	private static int partition(int property, double[][] nodes, int left, int right, int pivotIndex) {
 		
-		int i = left - 1, j = right + 1;
+		double pivot = nodes[pivotIndex][property];
+		swap(nodes, pivotIndex, right);
 		
-		while (true) {
+		int i = left;
+		for (int j = left; j < right; j++) {
 			
-			do { i++; } while (nodes[i][property] < pivot);
-			
-			do { j--; } while (nodes[j][property] > pivot);
-			
-			if (i >= j)
-				return i;
-			
-			swap(nodes, i, j);
+			if (nodes[j][property] < pivot) {
+
+				swap(nodes, i, j);
+				i++;
+			}
 		}
+		swap(nodes, i, right);
+		return i;
 	}
 	
 	// Swap node i and j in array
@@ -273,4 +290,7 @@ public class NextNode {
 	
 	// Stack to store the calculated results
 	private int[] _stack;
+	
+	// Minimum bounding box
+	private double[] _bounds;
 }
