@@ -41,7 +41,7 @@ public class KDTreeVerification {
 		
 		Random rand = new Random();
 		
-		for (int i = 0; i < 1000000; i++) {
+		for (int i = 0; i < 100; i++) {
 			
 			double x = bounds[0] + (bounds[2] - bounds[0]) * rand.nextDouble();
 			double y = bounds[1] + (bounds[3] - bounds[1]) * rand.nextDouble();
