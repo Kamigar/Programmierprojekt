@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 
-import routeplanner.backend.app.FileScanner;
 import routeplanner.backend.model.*;
 
 /*
@@ -318,45 +317,8 @@ public class Main {
 			
 			logger = new Logger(param.logLevel, param.logOut);
 			
-			Node[] nodes = null;
-			long startTime, endTime;
-
-			logger.info(System.lineSeparator() + "Reading graph" + System.lineSeparator());
-
-			try {
-
-				startTime = System.nanoTime();
-
-				// Read graph description file
-				nodes = FileScanner.readStructure(param.structureIn, logger, param.isTolerant);
-				
-				endTime = System.nanoTime();	
-
-			} catch (FileScanner.BadHeaderException ex) {
-				
-				logger.error("Bad header provided");
-				logger.info(ex.getMessage());
-				
-				throw new FatalFailure(Code.BAD_HEADER, "Bad header provided");
-
-			} catch (FileScanner.BadNodeException ex) {
-				
-				logger.error("Bad node provided");
-				logger.info(ex.getMessage());
-				
-				throw new FatalFailure(Code.BAD_NODE, "Bad node provided");
-
-			} catch (FileScanner.BadEdgeException ex) {
-				
-				logger.error("Bad edge provided");
-				logger.info(ex.getMessage());
-				
-				throw new FatalFailure(Code.BAD_EDGE, "Bad edge provided");
-			}
-
-			logger.info(System.lineSeparator() + nodes.length + " nodes read in "
-					+ (double)(endTime - startTime) / 1000000000 + " seconds");
-			
+			// Read graph
+			Node[] nodes = ReadGraphApp.run(param, logger);
 
 			logger.info(System.lineSeparator() + "Prepare data for calculation");
 
@@ -368,12 +330,12 @@ public class Main {
 				
 				DijkstraApp dijkstra = new DijkstraApp();
 
-				startTime = System.nanoTime();
+				long startTime = System.nanoTime();
 				
 				dijkstra.prepare(nodes);
 				finishInitialization(logger);
 
-				endTime = System.nanoTime();
+				long endTime = System.nanoTime();
 				
 				logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
 

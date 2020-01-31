@@ -2,11 +2,31 @@ apply plugin: 'java'
 apply plugin: 'application'
 
 mainClassName = 'routeplanner.backend.app.Main'
+
 sourceSets.main {
-  java.srcDirs = ['src']
-  resources.srcDirs = ['res']
+  java.srcDirs = ['src/main']
+  resources.srcDirs = ['res/main']
+}
+
+sourceSets.test {
+  java.srcDirs = ['src/test']
+  resources.srcDirs = ['res/test']
 }
 
 applicationName = 'routeplanner'
 applicationDefaultJvmArgs = ["-Xmx6g"]
+
+test {
+  useJUnitPlatform()
+  failFast = true
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
+}
 
