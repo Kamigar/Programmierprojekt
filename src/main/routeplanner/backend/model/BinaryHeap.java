@@ -1,10 +1,7 @@
 package routeplanner.backend.model;
 
-import java.util.Arrays;
-
 /*
  * Priority queue implementation as binary heap
- *   Note: Assuming for all ids: 0 <= id < size
  */
 public class BinaryHeap {
 	
@@ -12,10 +9,6 @@ public class BinaryHeap {
 	public BinaryHeap(int size) {
 		
 		_data = new int[size * 2];
-		
-		_indices = new int[size];
-		Arrays.fill(_indices, -1);
-		
 		_size = 0;
 	}
 	
@@ -25,25 +18,6 @@ public class BinaryHeap {
 		decreaseKey(_size, id, key);
 		
 		_size++;
-	}
-	
-	
-	// Decrease key of given index
-	public void decreaseKey(int id, int key) {
-		
-		int index = _indices[id];
-		int parentIndex = (index - 1) / 2;
-
-		if (index == 0 || key >= key(parentIndex)) {
-			// Entry position does not change
-			setKey(index, key);
-
-		} else {
-			// Swap with parent and decrease key on new position
-			set(index, id(parentIndex), key(parentIndex));
-			
-			decreaseKey(parentIndex, id, key);
-		}
 	}
 	
 	// Decrease key recursively
@@ -61,12 +35,6 @@ public class BinaryHeap {
 			
 			decreaseKey(parentIndex, id, key);		
 		}
-	}
-	
-	// Increase key of given index
-	public void increaseKey(int id, int key) {
-		
-		increaseKey(_indices[id], id, key);
 	}
 
 	// Increase key recursively
@@ -123,8 +91,6 @@ public class BinaryHeap {
 		
 		int first = peek();
 
-		_indices[first] = -1;
-		
 		_size--;
 		
 		if (_size != 0)
@@ -141,11 +107,6 @@ public class BinaryHeap {
 	// Return current number of entries
 	public int size() {
 		return _size;
-	}
-	
-	public boolean contains(int id) {
-		
-		return _indices[id] != -1;
 	}
 	
 	private int key(int i) {
@@ -172,16 +133,11 @@ public class BinaryHeap {
 		
 		setKey(index, key);
 		setId(index, id);
-		
-		_indices[id] = index;
 	}
 
 
 	// Data to store in the heap
 	private int[] _data;
-	
-	// Stores the indices to the corresponding ids
-	private int[] _indices;
 	
 	// Number of entries in the queue
 	private int _size;

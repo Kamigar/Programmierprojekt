@@ -13,28 +13,28 @@ public class FileScanner {
 	
 	// Exception classes
 
-	public static class BadHeaderException extends Exception {
+	static class BadHeaderException extends Exception {
 		
 		private static final long serialVersionUID = 1926680537412845559L;
 
 		public BadHeaderException(String reason) { super(reason); }
 	}
 	
-	public static class BadNodeException extends Exception {
+	static class BadNodeException extends Exception {
 		
 		private static final long serialVersionUID = 1378424271026452872L;
 
 		public BadNodeException(String reason) { super(reason); }
 	}
 	
-	public static class BadEdgeException extends Exception {
+	static class BadEdgeException extends Exception {
 		
 		private static final long serialVersionUID = -1460975851840457803L;
 
 		public BadEdgeException(String reason) { super(reason); }
 	}
 	
-	public static class BadRequestException extends Exception {
+	static class BadRequestException extends Exception {
 		
 		private static final long serialVersionUID = 4575260669648696900L;
 
@@ -363,8 +363,59 @@ public class FileScanner {
 		return nodes;
 	}
 	
-	// Read a target ID (request for one-to-many)
-	public static int readTarget(BufferedReader reader, StringPosition pos,
+	// Read a longitude and latitude (request for next node)
+	public static double[] readCoordinates(BufferedReader reader, StringPosition pos,
+			Logger logger, boolean isTolerant) throws BadRequestException, IOException {
+		
+		try {
+			
+			getNextRelevantLine(pos, reader);
+
+			if (pos.string == null)
+				return null;
+				
+			double latitude;
+			int end = skipFloat(pos.string, pos.index);
+			try {
+				latitude = Double.parseDouble(pos.string.substring(pos.index, end));
+			} catch (NumberFormatException ex) {
+				throw new BadRequestException("No latitude provided [double]");
+			}
+			
+			pos.index = skipWhitespace(pos.string, end);
+			
+			double longitude;
+			end = skipFloat(pos.string, pos.index);
+			try {
+				longitude = Double.parseDouble(pos.string.substring(pos.index, end));
+			} catch (NumberFormatException ex) {
+				throw new BadRequestException("No longitude provided [double]");
+			}
+			
+			end = skipWhitespace(pos.string, end);
+			if (end < pos.string.length())
+				throw new BadRequestException("Unexpected data in line");	
+
+			return new double[] { longitude, latitude };
+
+		} catch (BadRequestException ex) {
+			
+			if (isTolerant) {
+				
+				logger.warning(System.lineSeparator() + ex.getMessage());
+				logger.warning("Error in request. Try again...");
+				
+				return readCoordinates(reader, pos, logger, isTolerant);
+				
+			} else {
+				
+				throw ex;
+			}
+		}
+	}
+
+	// Read a node ID (request for one-to-many or next node)
+	public static int readId(BufferedReader reader, StringPosition pos,
 			int maxId, Logger logger, boolean isTolerant) throws BadRequestException, IOException {
 		
 		try {
@@ -374,22 +425,22 @@ public class FileScanner {
 			if (pos.string == null)
 				return -1;
 			
-			int trgId;
+			int id;
 			int end = skipInteger(pos.string, pos.index);
 			try {
-				trgId = Integer.parseUnsignedInt(pos.string.substring(pos.index, end));
+				id = Integer.parseUnsignedInt(pos.string.substring(pos.index, end));
 			} catch (NumberFormatException ex) {
-				throw new BadRequestException("No trgID provided [uint]");
+				throw new BadRequestException("No nodeID provided [uint]");
 			}
 			
 			end = skipWhitespace(pos.string, end);
 			if (end < pos.string.length())
 				throw new BadRequestException("Unexpected data in line");
 			
-			if (trgId < 0 || trgId >= maxId)
-				throw new BadRequestException("trgID out of range");
+			if (id < 0 || id >= maxId)
+				throw new BadRequestException("nodeID out of range");
 			
-			return trgId;
+			return id;
 
 		} catch (BadRequestException ex) {
 			
@@ -398,7 +449,7 @@ public class FileScanner {
 				logger.warning(System.lineSeparator() + ex.getMessage());
 				logger.warning("Error in request. Try again...");
 				
-				return readTarget(reader, pos, maxId, logger, isTolerant);
+				return readId(reader, pos, maxId, logger, isTolerant);
 				
 			} else {
 				

@@ -6,13 +6,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 
-import routeplanner.backend.app.FileScanner;
 import routeplanner.backend.model.*;
 
 /*
@@ -23,7 +23,7 @@ public class Main {
 	/*
 	 * Return codes of program
 	 */
-	private static enum Code {
+	static enum Code {
 
 		SUCCESS(0),
 		
@@ -45,7 +45,7 @@ public class Main {
 
 	// Exception classes
 
-	private static class FatalFailure extends Exception {
+	static class FatalFailure extends Exception {
 		
 		private static final long serialVersionUID = 988623077434694182L;
 
@@ -68,16 +68,21 @@ public class Main {
 		public BadParameterException(String detail) { super(detail); }
 	}
 	
-	private static enum Mode {
-		OTO,
-		OTA,
-		OTM
+	/*
+	 * Calculation modes of the program
+	 */
+	static enum Mode {
+		OTO, // one-to-one
+		OTA, // one-to-all
+		OTM, // one-to-many
+		NNI, // next-node-iterative
+		NNF, // next-node-fast
 	}
 
 	/*
 	 * Parameters for the program execution
 	 */
-	private static class Parameters {
+	static class Parameters {
 		
 		public BufferedReader structureIn = null;
 		public BufferedReader requestIn = null;
@@ -172,6 +177,18 @@ public class Main {
 				p.mode = Mode.OTM;
 				break;
 				
+			case "--next-node-iterative":
+			case "-nni":
+				
+				p.mode = Mode.NNI;
+				break;
+				
+			case "--next-node-fast":
+			case "-nnf":
+				
+				p.mode = Mode.NNF;
+				break;
+				
 			case "--tolerant":
 			case "-t":
 				
@@ -199,8 +216,7 @@ public class Main {
 			case "--help":
 			case "-h":
 
-				// Note: Assuming 'etc/help.txt' is accessible
-				FileInputStream reader = new FileInputStream("etc/help.txt");
+				InputStream reader = Main.class.getResourceAsStream("/help.txt");
 				byte[] data = reader.readAllBytes();
 				
 				System.out.print(new String(data, "UTF-8"));
@@ -270,6 +286,14 @@ public class Main {
 
 		return p;
 	}
+	
+	// Run garbage collection
+	private static void finishInitialization(Logger logger) throws IOException {
+		
+		logger.info("Run garbage collection");
+
+		Runtime.getRuntime().gc();
+	}
 
 	// Main function
 	public static void main(String[] args) {
@@ -293,206 +317,49 @@ public class Main {
 			
 			logger = new Logger(param.logLevel, param.logOut);
 			
-			Node[] nodes = null;
-			long startTime, endTime;
-
-			logger.info(System.lineSeparator() + "Reading graph" + System.lineSeparator());
-
-			try {
-
-				startTime = System.nanoTime();
-
-				// Read graph description file
-				nodes = FileScanner.readStructure(param.structureIn, logger, param.isTolerant);
-				
-				endTime = System.nanoTime();	
-
-			} catch (FileScanner.BadHeaderException ex) {
-				
-				logger.error("Bad header provided");
-				logger.info(ex.getMessage());
-				
-				throw new FatalFailure(Code.BAD_HEADER, "Bad header provided");
-
-			} catch (FileScanner.BadNodeException ex) {
-				
-				logger.error("Bad node provided");
-				logger.info(ex.getMessage());
-				
-				throw new FatalFailure(Code.BAD_NODE, "Bad node provided");
-
-			} catch (FileScanner.BadEdgeException ex) {
-				
-				logger.error("Bad edge provided");
-				logger.info(ex.getMessage());
-				
-				throw new FatalFailure(Code.BAD_EDGE, "Bad edge provided");
-			}
-
-			logger.info(System.lineSeparator() + nodes.length + " nodes read in "
-					+ (double)(endTime - startTime) / 1000000000 + " seconds");
-			
+			// Read graph
+			Node[] nodes = ReadGraphApp.run(param, logger);
 
 			logger.info(System.lineSeparator() + "Prepare data for calculation");
 
-			Dijkstra dijkstra = new Dijkstra();
-
-			dijkstra.prepare(nodes);
+			switch (param.mode) {
 			
-
-			logger.info("Run garbage collection");
-
-			Runtime.getRuntime().gc();
-			
-
-			logger.info(System.lineSeparator() + "Initialization finished");
-			
-
-			if (param.start != -1) {
-
-				// Calculate distances from one starting point
-				if (param.start < 0 || param.start >= nodes.length) {
-					
-					logger.error("nodeID of starting point out of range");
-					
-					throw new FatalFailure(Code.BAD_PARAMETER, "nodeID out of range");
-				}
+			case OTO:
+			case OTA:
+			case OTM:
 				
+				DijkstraApp dijkstra = new DijkstraApp();
 
-				logger.info(System.lineSeparator() + "Start calculation");
+				long startTime = System.nanoTime();
+				
+				dijkstra.prepare(nodes);
+				finishInitialization(logger);
 
+				long endTime = System.nanoTime();
+				
+				logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
+
+				// Run Dijkstra calculation
+				dijkstra.run(param, nodes, logger);
+				break;
+				
+			case NNI:
+			case NNF:
+				
+				NextNodeApp nextNode = new NextNodeApp();
+				
 				startTime = System.nanoTime();
-
-				// Calculate distances
-				dijkstra.calculate(param.start);
-
-				endTime = System.nanoTime();	
-
-
-				logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator()
-						+ System.lineSeparator() + "Distances: [trgID] [distance]");
 				
-				dijkstra.getResult(nodes);
+				nextNode.prepare(nodes);
+				finishInitialization(logger);
 
-				if (param.mode == Mode.OTA) {
+				endTime = System.nanoTime();
 
-					// Output result
-					for (Node node : nodes) {
-						
-						String line = String.valueOf(node.id()) + ' ' + ParseUtilities.intToString(node.distance());
-						
-						param.requestOut.write(line);
-						param.requestOut.newLine();
+				logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
 
-						logger.info(line);
-					}	
-
-				} else {
-					
-					// Read multiple requests
-					logger.info(System.lineSeparator()
-						+ "Input format: [trgID] e.g. 18445" + System.lineSeparator()
-						+ "  use multiple lines for multiple requests" + System.lineSeparator()
-						+ "  end input with <EOF> (CTRL+D)" + System.lineSeparator());
-
-					FileScanner.StringPosition pos = new FileScanner.StringPosition();
-					while (true) {
-
-						int trgId;
-						try {
-							
-							// Read target request
-							trgId = FileScanner.readTarget(param.requestIn, pos, nodes.length, logger, param.isTolerant);
-
-						} catch (FileScanner.BadRequestException ex) {
-							
-							logger.error("Bad request provided");
-							logger.info(ex.getMessage());
-							
-							throw new FatalFailure(Code.BAD_REQUEST, "Bad request provided");
-						}
-
-						// Note: No 'while (trgId != -1) {...}' loop used
-						//   to prevent code duplication of 'FileScanner.readRequest(...)'
-						if (trgId == -1)
-							break;
-						
-						// Output result
-
-						Node dst = nodes[trgId];
-
-						String distance = ParseUtilities.intToString(dst.distance());
-
-						param.requestOut.write(distance);
-						param.requestOut.newLine();
-
-						logger.info("Distance: " + distance + System.lineSeparator());
-					}
-				}
-			
-			} else {
-				
-				// Read multiple requests
-				logger.info(System.lineSeparator()
-					+ "Input format: [srcID] [trgID] e.g. 18445 12343" + System.lineSeparator()
-					+ "  use multiple lines for multiple requests" + System.lineSeparator()
-					+ "  end input with <EOF> (CTRL+D)" + System.lineSeparator());
-
-				FileScanner.StringPosition pos = new FileScanner.StringPosition();
-				int lastRequest = -1;
-				while (true) {
-
-					int[] request;
-					try {
-						
-						// Read path request
-						request = FileScanner.readRequest(param.requestIn, pos, nodes.length, logger, param.isTolerant);
-						
-					} catch (FileScanner.BadRequestException ex) {
-						
-						logger.error("Bad request provided");
-						logger.info(ex.getMessage());
-					
-						throw new FatalFailure(Code.BAD_REQUEST, "Bad request provided");
-					}	
-					
-					// Note: No 'while (request != null) {...}' loop used
-					//   to prevent code duplication of 'FileScanner.readRequest(...)'
-					if (request == null)
-						break;
-
-					if (request[0] != lastRequest) {
-						
-						lastRequest = request[0];
-						
-						dijkstra.reset();
-
-						logger.info("Start calculation");
-
-						startTime = System.nanoTime();
-						
-						// Calculate distances
-						dijkstra.calculate(lastRequest);
-						
-						endTime = System.nanoTime();	
-
-
-						logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());	
-						
-						dijkstra.getResult(nodes);
-					}
-					
-					// Output result
-
-					Node dst = nodes[request[1]];
-
-					String distance = ParseUtilities.intToString(dst.distance());
-
-					param.requestOut.write(distance);
-					param.requestOut.newLine();
-
-					logger.info("Distance: " + distance + System.lineSeparator());
-				}	
+				// Run next node calculation
+				nextNode.run(param, nodes, logger);
+				break;
 			}
 
 		} catch (FatalFailure failure) {
