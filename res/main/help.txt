@@ -18,24 +18,39 @@ The program operates on 2 input (default: stdin) and 2 output (default: stdout) 
                                                 FOR EACH EDGE:
                                                   [srcID] [trgID] [cost] [type] [maxspeed]
 
--r, --request-file <file>       List of distances to calculate
-  [default: stdin]                Note: Omit [srcID] if --one-to-many is used
-                                  Input format: FOR EACH ROUTE:
-                                                  [srcID] [trgID]
+-r, --request-file <file>       List of distances to calculate or coordinates for nearest neighbor search
+  [default: stdin]                Input format: DEFAULT
+                                                FOR EACH ROUTE:
+						  [srcID] [trgID]
+				  Input format: --one-to-many
+				                FOR EACH ROUTE:
+						  [trgID]
+				  Input format: --next-node-iterative, --next-node-fast
+				                FOR EACH POINT:
+						  [latitude] [longitude]
 
--o, --output-file <file>        Output of the calculated distances
-  [default: stdout]               Output format: FOR EACH ROUTE:
-                                                   [cost]
+-o, --output-file <file>        Output of the calculated distances or the next neighbors
+  [default: stdout]               Output format: DEFAULT
+                                                 FOR EACH ROUTE:
+						   [cost]
+				  Output format: --next-node-iterative, --next-node-fast
+				                 FOR EACH NEAREST NEIGHBOR:
+						   [distance] [nodeID]
 
 -l, --log-file <file>           Log output of the program
   [default: stdout]               
 
 
-Also there is the option to start a single one-to-all or one-to-many calculation.
+Also there is the option to start a single one-to-all or one-to-many calculation as well as a nearest
+  neighbor search (iteratively or with k-d tree)
 
 -ota, --one-to-all <srcID>      Calculate all distances from start point <srcID>
 
 -otm, --one-to-many <srcID>     Calculate distances from start point <srcID>
+
+-nni, --next-node-iterative     Calculate nearest neighbor iteratively
+
+-nnf, --next-node-fast          Calculate nearest neighbor with k-d tree
 
 
 The log verbosity defaults to --warning (--quiet if --output-file is same as --log-file).
