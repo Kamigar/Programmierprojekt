@@ -1,8 +1,5 @@
 package routeplanner.backend.app;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-
 import routeplanner.backend.model.IntStack;
 import routeplanner.backend.model.Node;
 
@@ -25,15 +22,12 @@ public class NextNode {
 	// Get the calculated nearest nodes
 	public Node[] getResult(Node[] nodes) {
 		
-		LinkedList<Node> result = new LinkedList<Node>();
-		for (int i = 0; i < IntStack.size(_stack); i++) {
+		Node[] r = new Node[IntStack.size(_stack)];
+		for (int i = 0; i < r.length; i++) {
 			
-			double[] n = _data[IntStack.get(_stack, i)];
-			
-			for (int j = 2; j < n.length; j++)
-				result.add(nodes[(int)n[j]]);
+			r[i] = nodes[IntStack.get(_stack, i)];
 		}
-		return result.toArray(new Node[0]);
+		return r;
 	}
 	
 	// Return the minimum bounding box of the graph
@@ -49,9 +43,9 @@ public class NextNode {
 		
 		double minDistance = Double.POSITIVE_INFINITY;
 		
-		for (int i = 0; i < _data.length; i++) {
+		for (int i = 0; i < _data.length / 2; i++) {
 			
-			double d = distance(longitude, latitude, _data[i][0], _data[i][1]);
+			double d = distance(longitude, latitude, getProperty(0, _data, i), getProperty(1, _data, i));
 			
 			if (d <= minDistance) {
 				
@@ -75,13 +69,13 @@ public class NextNode {
 	}
 	
 	// Recursively search next node in (sub)tree
-	private static double findNext(int[] results, int property, double[][] data, TreeNode tree, double current, double other) {
+	private static double findNext(int[] results, int property, double[] data, TreeNode tree, double current, double other) {
 		
 		if (tree.left == null) {
 			// Is leaf node
 			int index = (int)tree.value;
 			IntStack.push(results, index);
-			return distance(current, other, data[index][property], data[index][1 - property]);
+			return distance(current, other, getProperty(property, data, index), getProperty(1 - property, data, index));
 		}
 		
 		if (tree.right == null) {
@@ -139,68 +133,35 @@ public class NextNode {
 	// Create k-d tree and initialize calculation data
 	public void prepare(Node[] nodes) {
 		
-		Node[] sorted = Arrays.copyOf(nodes, nodes.length);
-		
-		// Sort nodes by position
-		Arrays.sort(sorted, (x, y) -> {
-			
-			if (x.longitude() == y.longitude()) {
-				if (x.latitude() == y.latitude())
-					return 0;
+		// Copy nodes to new structure and find minimum bounding box
 
-				return x.latitude() < y.latitude() ? -1 : 1;
-			}
-			return x.longitude() < y.longitude() ? -1 : 1;
-		});
-		
 		_bounds = new double[] { Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY };
-		_data = new double[sorted.length][];
-		int dataSize = 0;
+		_data = new double[nodes.length * 2];
 		
-		// Find and merge duplicates into a structure with unique positions
-		for (int i = 0; i < sorted.length;) {
+		for (int i = 0; i < nodes.length; i++) {
 			
-			double x = sorted[i].longitude(), y = sorted[i].latitude();
+			_data[i * 2] = nodes[i].longitude();
+			_data[i * 2 + 1] = nodes[i].latitude();
 			
-			int j = i + 1;
-			while (j < sorted.length && sorted[j].longitude() == x && sorted[j].latitude() == y)
-				j++;
-			
-			double[] location = new double[j - i + 2];
-			location[0] = x;
-			location[1] = y;
-
-			for (int k = i; k < j; k++)
-				location[k - i + 2] = sorted[k].id();
-
-			if (x < _bounds[0])
-				_bounds[0] = x;
-			if (y < _bounds[1])
-				_bounds[1] = y;
-			if (x > _bounds[2])
-				_bounds[2] = x;
-			if (y > _bounds[3])
-				_bounds[3] = y;
-
-			_data[dataSize] = location;
-			dataSize++;
-			
-			i = j;
+			if (nodes[i].longitude() < _bounds[0])
+				_bounds[0] = nodes[i].longitude();
+			if (nodes[i].longitude() > _bounds[2])
+				_bounds[2] = nodes[i].longitude();
+			if (nodes[i].latitude() < _bounds[1])
+				_bounds[1] = nodes[i].latitude();
+			if (nodes[i].latitude() > _bounds[3])
+				_bounds[3] = nodes[i].latitude();
 		}
-		
-		// Shrink data to relevant size
-		_data = Arrays.copyOf(_data, dataSize);
-		
 
 		// Create k-d tree
-		_root = createTree(0, _data, 0, _data.length - 1);
+		_root = createTree(0, _data, 0, nodes.length - 1);
 
 		// Create result stack
-		_stack = IntStack.create(dataSize);
+		_stack = IntStack.create(nodes.length);
 	}
 	
 	// Create k-d (sub)tree recursively
-	private static TreeNode createTree(int property, double[][] nodes, int left, int right) {
+	private static TreeNode createTree(int property, double[] nodes, int left, int right) {
 		
 		if (left >= right) {
 			
@@ -229,10 +190,10 @@ public class NextNode {
 	}
 	
 	// Find 'pos'-th smallest element (position 'pos' in sorted array)
-	private static double getPosition(int property, double[][] nodes, int left, int right, int pos) {
+	private static double getPosition(int property, double[] nodes, int left, int right, int pos) {
 		
-		// Partition elements into two parts (use value in the middle as pivot)
-		int pivot = partition(property, nodes, left, right, left + pos);
+		// Partition elements into two parts
+		int pivot = partition(property, nodes, left, right);
 		int pivotPos = pivot - left;
 		
 		// Continue search in right or left part
@@ -242,19 +203,18 @@ public class NextNode {
 			return getPosition(property, nodes, pivot + 1, right, pos - pivotPos - 1);
 			
 		// Return if pivot is on position 'pos'
-		return nodes[pivot][property];
+		return getProperty(property, nodes, pivot);
 	}
 	
 	// Partition elements into two parts (values less or equal than pivot left, greater or equal pivot right)
-	private static int partition(int property, double[][] nodes, int left, int right, int pivotIndex) {
+	private static int partition(int property, double[] nodes, int left, int right) {
 		
-		double pivot = nodes[pivotIndex][property];
-		swap(nodes, pivotIndex, right);
+		double pivot = getProperty(property, nodes, right);
 		
 		int i = left;
 		for (int j = left; j < right; j++) {
 			
-			if (nodes[j][property] < pivot) {
+			if (getProperty(property, nodes, j) < pivot) {
 
 				swap(nodes, i, j);
 				i++;
@@ -263,14 +223,7 @@ public class NextNode {
 		swap(nodes, i, right);
 		return i;
 	}
-	
-	// Swap node i and j in array
-	private static void swap(double[][] nodes, int i, int j) {
-		
-		double[] t = nodes[i];
-		nodes[i] = nodes[j];
-		nodes[j] = t;
-	}
+
 
 	// Calculate Euclidean distance between two points
 	private static double distance(double ax, double ay, double bx, double by) {
@@ -281,12 +234,29 @@ public class NextNode {
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 	
+	// Swap node i and j in node array
+	private static void swap(double[] nodes, int i, int j) {
+		
+		i *= 2; j *= 2;
+		for (int k = 0; k < 2; k++) {
+			double t = nodes[i + k];
+			nodes[i + k] = nodes[j + k];
+			nodes[j + k] = t;
+		}
+	}
+	
+	// Get property of node on given index
+	private static double getProperty(int property, double[] data, int index) {
+		
+		return data[index * 2 + property];
+	}
+	
 	
 	// Root of the k-d tree
 	private TreeNode _root;
 	
-	// Structure to store nodes with unique position
-	private double[][] _data;
+	// Structure to store nodes with their longitude & latitude
+	private double[] _data;
 	
 	// Stack to store the calculated results
 	private int[] _stack;
