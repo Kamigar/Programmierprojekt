@@ -57,29 +57,26 @@ public class IntStack {
 	
 	// Remove all elements on the stack
 	public static void clear(int[] stack) {
-		
 		setSize(stack, 0);
 	}
 
 	// The capacity of the stack
 	public static int capacity(int[] stack) {
-		
 		return stack.length;
 	}
 
-	// The (actually used) size of the stack
+	// The current number of elements on the stack
 	public static int size(int[] stack) {
-
 		return stack[0];
 	}
 	
+	// Set current number of elements
 	private static void setSize(int[] stack, int size) {
-		
 		stack[0] = size;
 	}
 	
+	// Increase number of elements by 'count'
 	private static void changeSize(int[] stack, int count) {
-		
 		stack[0] += count;
 	}
 }

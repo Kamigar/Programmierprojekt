@@ -101,7 +101,7 @@ public class FileScanner {
 		
 		try {
 			
-			logger.info("Number of nodes in graph:");
+			logger.instruction("Number of nodes in graph:");
 
 			getNextRelevantLine(pos, reader);
 			if (pos.string == null)
@@ -119,7 +119,7 @@ public class FileScanner {
 			if (end < pos.string.length())
 				throw new BadHeaderException("Too much data in the first line");
 			
-			logger.info("Number of edges in graph:");
+			logger.instruction("Number of edges in graph:");
 
 			getNextRelevantLine(pos, reader);
 			if (pos.string == null)
@@ -327,8 +327,8 @@ public class FileScanner {
 		
 		logger.info("Header of file parsed successfully" + System.lineSeparator()
 			+ "  " + cnt[0] + " nodes" + System.lineSeparator()
-			+ "  " + cnt[1] + " edges" + System.lineSeparator() + System.lineSeparator()
-			+ "Reading nodes. Input format: [nodeID] [nodeID2] [latitude] [longitude] [elevation]");
+			+ "  " + cnt[1] + " edges" + System.lineSeparator());
+		logger.instruction("Reading nodes. Input format: [nodeID] [nodeID2] [latitude] [longitude] [elevation]");
 		
 		Node[] nodes = new Node[cnt[0]];
 		Edge[] edges = new Edge[cnt[1]];
@@ -340,8 +340,8 @@ public class FileScanner {
 			nodes[t.id()] = new Node(t.id(), t.latitude(), t.longitude(), new Edge[0]);
 		}
 		
-		logger.info("Nodes parsed" + System.lineSeparator() + System.lineSeparator()
-			+ "Reading edges. Input format: [srcID] [trgID] [cost] [type] [maxspeed]");
+		logger.info("Nodes parsed" + System.lineSeparator());
+		logger.instruction("Reading edges. Input format: [srcID] [trgID] [cost] [type] [maxspeed]");
 		
 		for (int i = 0; i < cnt[1]; i++) {
 			
@@ -357,7 +357,6 @@ public class FileScanner {
 		}
 		
 		logger.info("Edges parsed" + System.lineSeparator());
-		
 		logger.info("Adjacency graph created");	
 
 		return nodes;

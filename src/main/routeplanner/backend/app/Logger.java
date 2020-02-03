@@ -14,11 +14,13 @@ public class Logger {
 	 */
 	public enum Level {
 		
+		INSTRUCTION,
 		INFO,
 		WARNING,
 		ERROR
 	}
 	
+
 	// Default log level (not explicitly specified)
 	public static Level defaultLogLevel = Level.WARNING;
 	// Default log level, if output and log streams are the same
@@ -30,6 +32,7 @@ public class Logger {
 	}
 	
 	// Initialize logger with the given log level
+	//   Note: Do not close logger (or 'System.out' will be closed)
 	public Logger(Level level) {
 		this(level, new BufferedWriter(new OutputStreamWriter(System.out)));
 	}
@@ -72,6 +75,17 @@ public class Logger {
 		_writer.flush();
 	}
 	
+	// Close the underlying stream
+	public void close() throws IOException {
+		
+		_writer.close();
+	}
+	
+	// Log message with level INSTRUCTION
+	public void instruction(String message) throws IOException {
+		log(Level.INSTRUCTION, message);
+	}
+	
 	// Log message with level INFO
 	public void info(String message) throws IOException {
 		log(Level.INFO, message);
@@ -85,6 +99,16 @@ public class Logger {
 	// Log message with level ERROR
 	public void error(String message) throws IOException {
 		log(Level.ERROR, message);
+	}
+	
+	// Return the current level of the logger
+	public Level level() {
+		return _level;
+	}
+	
+	// Set the current level of the logger
+	public void setLevel(Level level) {
+		_level = level;
 	}
 	
 

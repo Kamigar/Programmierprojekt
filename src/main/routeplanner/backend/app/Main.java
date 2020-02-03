@@ -1,7 +1,13 @@
 package routeplanner.backend.app;
 
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -9,11 +15,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 
-import routeplanner.backend.model.*;
+import routeplanner.backend.app.App.FatalFailure;
+import routeplanner.backend.app.App.Code;
+import routeplanner.backend.app.App.Mode;
+import routeplanner.backend.app.App.Parameters;
 
 /*
  * Program flow and user interaction
@@ -21,88 +32,94 @@ import routeplanner.backend.model.*;
 public class Main {
 	
 	/*
-	 * Return codes of program
+	 * Exception class for bad parameter
 	 */
-	static enum Code {
-
-		SUCCESS(0),
-		
-		UNHANDLED_EXCEPTION(-99),
-		IO_EXCEPTION(-1),
-		
-		BAD_PARAMETER(-2),
-		BAD_HEADER(-3),
-		BAD_NODE(-4),
-		BAD_EDGE(-5),
-		BAD_REQUEST(-6);
-		
-		private Code(int value) { _value = value; }
-		
-		public int value() { return _value; }
-		
-		private int _value;
-	}	
-
-	// Exception classes
-
-	static class FatalFailure extends Exception {
-		
-		private static final long serialVersionUID = 988623077434694182L;
-
-		public FatalFailure(Code code, String message) {
-			super(message);
-			_code = code;
-		}
-		
-		public Code code() {
-			return _code;
-		}
-		
-		private Code _code;
-	}
-	
 	private static class BadParameterException extends Exception {
 		
 		private static final long serialVersionUID = -6297306542282662293L;
 
 		public BadParameterException(String detail) { super(detail); }
 	}
-	
-	/*
-	 * Calculation modes of the program
-	 */
-	static enum Mode {
-		OTO, // one-to-one
-		OTA, // one-to-all
-		OTM, // one-to-many
-		NNI, // next-node-iterative
-		NNF, // next-node-fast
-	}
 
 	/*
-	 * Parameters for the program execution
+	 * Shutdown hook - Runs after program termination
+	 *   Close I/O streams and stop server
 	 */
-	static class Parameters {
+	public static class ShutdownHook extends Thread {
 		
-		public BufferedReader structureIn = null;
-		public BufferedReader requestIn = null;
-		public BufferedWriter requestOut = null;
-		public BufferedWriter logOut = null;
-		public Mode mode = Mode.OTO;
-		public int start = -1;
-		public Logger.Level logLevel = null;
-		public boolean isTolerant = false;
+		@Override
+		public void run() {
+			
+			try {
+
+				if (server != null) {
+					
+					if (logger != null)
+						logger.info("Stopping server");
+					
+					server.stop(serverShutdownDelay);
+				}	
+				
+				if (param != null) {
+					
+					if (param.structureIn != null && param.structureIn != stdinReader && param.structureIn != param.requestIn)
+						param.structureIn.close();
+					
+					if (param.requestIn != null && param.requestIn != stdinReader)
+						param.requestIn.close();
+					
+					if (param.requestOut != null && param.requestOut != stdoutWriter && param.requestOut != param.logOut)
+						param.requestOut.close();
+
+					// Note: 'param.logOut' will be closed through logger
+				}
+
+				if (logger != null) {
+					
+					logger.info("Execution finished");
+
+					if (param.logOut != stdoutWriter)
+						logger.close();
+					else
+						logger.flush();
+				}
+
+			} catch (IOException ex) {
+				
+				System.out.println("I/O exception while shutting down application");
+			}
+		}
+		
+		public Parameters param;
+		public Logger logger;
+		public Server server;
 	}
 	
+
+	// Some compile-time parameters
+	static final int serverPortNumber = 80;
+	static final int serverBacklogSize = 10;
+	static final int serverShutdownDelay = 1;
+	static final String serverRootRedirection = "/index.html";
+
+	static final String htmlDirPath = "/html";
+	static final String helpFilePath = "/help.txt";
+
+	// Default stream writers (System.in/System.out)
+	private static final Charset utf8 = Charset.forName("utf-8");
+	private static final BufferedReader stdinReader = new BufferedReader(new InputStreamReader(System.in, utf8));
+	private static final BufferedWriter stdoutWriter = new BufferedWriter(new OutputStreamWriter(System.out, utf8));
+	
+
 	// Read command line parameters
-	private static Parameters readParameters(String[] args)
-			throws BadParameterException, IOException {
+	private static Parameters readParameters(String[] args) throws BadParameterException, IOException {
 		
 		Parameters p = new Parameters();
 		
 		String structureIn = null, requestIn = null;
 		String requestOut = null, logOut = null;
 		
+		// Parse command line parameters
 		for (int i = 0; i < args.length; i++) {
 			
 			switch (args[i]) {
@@ -147,6 +164,12 @@ public class Main {
 				logOut = args[i];
 				break;
 				
+			case "--one-to-one":
+			case "-oto":
+				
+				p.mode = Mode.OTO;
+				break;
+				
 			case "--one-to-all":
 			case "-ota":
 				
@@ -189,6 +212,42 @@ public class Main {
 				p.mode = Mode.NNF;
 				break;
 				
+			case "--server":
+			case "-srv":
+				
+				p.mode = Mode.SRV;
+				break;
+				
+			case "--port":
+			case "-p":
+				
+				i++;
+				if (args.length == i)
+					throw new BadParameterException("No port number provided");
+				
+				try {
+					p.port = Integer.parseUnsignedInt(args[i]);
+				} catch (NumberFormatException ex) {
+					throw new BadParameterException("Bad port number provided");
+				}
+				break;
+				
+			case "--html-directory":
+			case "-d":
+				
+				i++;
+				if (args.length == i)
+					throw new BadParameterException("No HTML directory provided");
+				
+				String dir = new File(args[i]).toURI().toString();
+
+				// Remove trailing '/' from directory path
+				if (dir.endsWith("/"))
+					dir = dir.substring(0, dir.length() - 1);
+
+				p.htmlDirectory = new URL(dir);
+				break;
+				
 			case "--tolerant":
 			case "-t":
 				
@@ -216,51 +275,56 @@ public class Main {
 			case "--help":
 			case "-h":
 
-				InputStream reader = Main.class.getResourceAsStream("/help.txt");
+				InputStream reader = Main.class.getResourceAsStream(helpFilePath);
 				byte[] data = reader.readAllBytes();
 				
-				System.out.print(new String(data, "UTF-8"));
+				System.out.print(new String(data, utf8));
 
 				System.exit(Code.SUCCESS.value());
 
 			default:
-				
+
 				throw new BadParameterException("Unknown parameter. Use -h for help");
 			}
 		}
 		
-		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
-		BufferedWriter stdout = new BufferedWriter(new OutputStreamWriter(System.out, "UTF-8"));
-					
+		// Throw exception if no operation/mode (e.g. '--oto') was specified
+		if (p.mode == Mode.NONE) {
+			throw new BadParameterException("No operation specified. Use -h for help");
+		}
+		
+
+		// Create I/O reader/writer
+
 		try {
 			
 			if (structureIn == null)
-				p.structureIn = stdin;
+				p.structureIn = stdinReader;
 			else
-				p.structureIn = new BufferedReader(new InputStreamReader(new FileInputStream(structureIn), "UTF-8"));
+				p.structureIn = new BufferedReader(new InputStreamReader(new FileInputStream(structureIn), utf8));
 			
 			if (requestIn == null)
-				p.requestIn = stdin;
+				p.requestIn = stdinReader;
 			else
 				if (structureIn != null && Files.exists(Paths.get(requestIn))
 					&& Files.isSameFile(Paths.get(requestIn), Paths.get(structureIn)))
 					p.requestIn = p.structureIn;
 				else
-					p.requestIn = new BufferedReader(new InputStreamReader(new FileInputStream(requestIn), "UTF-8"));
+					p.requestIn = new BufferedReader(new InputStreamReader(new FileInputStream(requestIn), utf8));
 			
 			if (requestOut == null)
-				p.requestOut = stdout;
+				p.requestOut = stdoutWriter;
 			else
-				p.requestOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(requestOut), "UTF-8"));
+				p.requestOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(requestOut), utf8));
 			
 			if (logOut == null)
-				p.logOut = stdout;
+				p.logOut = stdoutWriter;
 			else
 				if (requestOut != null && Files.exists(Paths.get(logOut))
 					&& Files.isSameFile(Paths.get(logOut), Paths.get(requestOut)))
 					p.logOut = p.requestOut;
 				else
-					p.logOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logOut), "UTF-8"));	
+					p.logOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logOut), utf8));	
 		
 		} catch (FileNotFoundException ex) {
 			
@@ -276,6 +340,8 @@ public class Main {
 		}
 		
 
+		// Set log level
+
 		if (p.logLevel == null) {
 			
 			if (p.requestOut == p.logOut)
@@ -283,29 +349,82 @@ public class Main {
 			else
 				p.logLevel = Logger.defaultLogLevel;
 		}
+		
+		if (p.logLevel == Logger.Level.INFO && p.logOut == stdoutWriter)
+			p.logLevel = Logger.Level.INSTRUCTION;
 
 		return p;
 	}
 	
-	// Run garbage collection
-	private static void finishInitialization(Logger logger) throws IOException {
+	// Return HashMap (filename -> data) of files in directory 'url'
+	private static HashMap<String, byte[]> getHtmlData(URL url, Logger logger) throws IOException, FatalFailure {
 		
-		logger.info("Run garbage collection");
+		HashMap<String, byte[]> res = new HashMap<String, byte[]>();
+		
+		if (url.getProtocol().contentEquals("jar")) {
+			
+			// Skip 'file:' at beginning and split as 'path'!'resourceFolder'
+			String path = url.getPath().substring(5, url.getPath().indexOf('!'));
+			String resourceFolder = url.getPath().substring(url.getPath().indexOf('!') + 2, url.getPath().length());
+			
+			JarFile jar = new JarFile(path);
+			Enumeration<JarEntry> entries = jar.entries();
+			while (entries.hasMoreElements()) {
+				
+				String file = entries.nextElement().getName();
 
-		Runtime.getRuntime().gc();
+				// Ignore files outside 'resourceFolder' and directories
+				if (file.startsWith(resourceFolder) && file.lastIndexOf("/") < file.length() - 1) {
+					
+					InputStream s = Main.class.getResourceAsStream("/" + file);
+					res.put(file.substring(resourceFolder.length(), file.length()), s.readAllBytes());
+					s.close();
+				}
+			}
+			jar.close();
+
+		} else if (url.getProtocol().contentEquals("file")) {
+			
+			LinkedList<String> files = new LinkedList<String>();
+
+			// Find all files recursively
+			Files.find(Paths.get(url.getPath()), 128,
+				(path, filter) -> filter.isRegularFile())
+					.forEach(x -> files.add(x.toString()));
+
+			for (String file : files) {
+				
+				FileInputStream s = new FileInputStream(file);
+				res.put(file.substring(url.getPath().length(), file.length()), s.readAllBytes());
+				s.close();
+			}
+
+		} else {
+			
+			logger.error("Resource folder uses unsupported protocol '" + url.getProtocol() + "'");
+			throw new FatalFailure(Code.IO_EXCEPTION, "Resources with unsupported protocol");
+		}
+		return res;
 	}
-
+	
+	
 	// Main function
 	public static void main(String[] args) {
-
-		Parameters param = null;
-		Logger logger = null;
+		
 		try {
 			
+			ShutdownHook hook = new ShutdownHook();
+			Runtime.getRuntime().addShutdownHook(hook);
+
+			Parameters param = null;
+			Logger logger = null;
+			App app = new App();	
+
 			try {
 			
 				// Read command line parameters
 				param = readParameters(args);
+				hook.param = param;
 				
 			} catch (BadParameterException ex) {
 				
@@ -316,50 +435,103 @@ public class Main {
 			}
 			
 			logger = new Logger(param.logLevel, param.logOut);
-			
+			hook.logger = logger;
+
+
 			// Read graph
-			Node[] nodes = ReadGraphApp.run(param, logger);
 
+			app.readGraph(param, logger);
+			
+			if (param.structureIn != stdinReader && param.structureIn != param.requestIn) {
+				// Close structure input stream
+				param.structureIn.close();
+				param.structureIn = null;
+			}
+
+
+			// Prepare data for calculation
+			
 			logger.info(System.lineSeparator() + "Prepare data for calculation");
-
+			
+			long startTime = System.nanoTime();
+			
 			switch (param.mode) {
 			
 			case OTO:
 			case OTA:
 			case OTM:
 				
-				DijkstraApp dijkstra = new DijkstraApp();
-
-				long startTime = System.nanoTime();
-				
-				dijkstra.prepare(nodes);
-				finishInitialization(logger);
-
-				long endTime = System.nanoTime();
-				
-				logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
-
-				// Run Dijkstra calculation
-				dijkstra.run(param, nodes, logger);
+				app.prepareDijkstra();
 				break;
 				
 			case NNI:
 			case NNF:
 				
-				NextNodeApp nextNode = new NextNodeApp();
-				
-				startTime = System.nanoTime();
-				
-				nextNode.prepare(nodes);
-				finishInitialization(logger);
-
-				endTime = System.nanoTime();
-
-				logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
-
-				// Run next node calculation
-				nextNode.run(param, nodes, logger);
+				app.prepareNextNode();
 				break;
+				
+			case SRV:
+				
+				app.prepare();
+				break;
+				
+			case NONE:
+				// Should never happen
+				throw new FatalFailure(Code.BAD_PARAMETER, "No mode provided");
+			}
+			
+			Runtime.getRuntime().gc();
+
+			long endTime = System.nanoTime();
+
+			logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());
+
+
+			// Run calculation(s)
+
+			switch (param.mode) {
+			
+			case OTO:
+				
+				app.runMultipleDijkstra(param, logger);
+				break;
+				
+			case OTA:
+			case OTM:
+				
+				app.runSingleDijkstra(param, logger);
+				break;
+				
+			case NNI:
+			case NNF:
+				
+				app.runNextNode(param, logger);
+				break;
+				
+			case SRV:
+				
+				// Increase log level to prevent logging of instructions for every request
+				if (logger.level() == Logger.Level.INSTRUCTION)
+					logger.setLevel(Logger.Level.INFO);
+				
+				Server server = new Server();
+
+				HashMap<String, byte[]> html = getHtmlData(param.htmlDirectory, logger);
+
+				HashMap<String, String> redirections = new HashMap<String, String>();
+				redirections.put("/", serverRootRedirection);
+				
+				// Start server
+				server.start(param.port, serverBacklogSize, html, redirections, app, logger);
+				hook.server = server;
+				
+				System.out.println(System.lineSeparator() + "Server started... Press [enter] to shut down");
+				System.in.read();
+				break;
+				
+			case NONE:
+				// Should never happen
+				throw new FatalFailure(Code.BAD_PARAMETER, "No mode provided");
 			}
 
 		} catch (FatalFailure failure) {
@@ -379,35 +551,9 @@ public class Main {
 		} catch (Exception ex) {
 			
 			System.out.println(System.lineSeparator() + "Unhandled exception occured");
-			System.out.println(ex.getStackTrace());
+			ex.printStackTrace(System.out);
 
 			System.exit(Code.UNHANDLED_EXCEPTION.value());
-
-		} finally {
-			
-			try {
-			
-				if (logger != null)
-					logger.flush();
-
-				if (param != null) {
-
-					if (param.structureIn != null)
-						param.structureIn.close();
-					if (param.requestIn != null)
-						param.requestIn.close();
-					if (param.requestOut != null)
-						param.requestOut.close();
-					if (param.logOut != null)
-						param.logOut.close();
-				}
-				
-			} catch (IOException ex) {
-				
-				System.out.println("Error while closing files");
-				System.out.println("  " + ex.getMessage());
-				System.exit(Code.IO_EXCEPTION.value());
-			}
 		}
 
 		System.exit(Code.SUCCESS.value());
