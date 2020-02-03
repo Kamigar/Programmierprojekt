@@ -12,12 +12,12 @@ public class Dijkstra {
 		
 		// Initialize start node with distance 0
 		setDistance(start, 0);
-		_queue.insert(start, 0);
+		IntHeap.insert(_queue, start, 0);
 		
-		while (!_queue.isEmpty()) {
+		while (!IntHeap.isEmpty(_queue)) {
 			
 			// Remove next node from queue
-			int[] current = _data[_queue.poll()];
+			int[] current = _data[IntHeap.poll(_queue)];
 			int currentDistance = current[0];
 
 			if (currentDistance < 0)
@@ -36,7 +36,7 @@ public class Dijkstra {
 					setDistance(neighbour, newDistance);
 					
 					// Add node with new distance to queue
-					_queue.insert(neighbour, newDistance);
+					IntHeap.insert(_queue, neighbour, newDistance);
 				}
 			}
 		}
@@ -58,7 +58,7 @@ public class Dijkstra {
 	// Prepare data for calculation
 	public void prepare(Node[] nodes) {
 		
-		_queue = new BinaryHeap(nodes.length);
+		_queue = IntHeap.create(nodes.length);
 
 		_data = new int[nodes.length][];
 		
@@ -108,8 +108,8 @@ public class Dijkstra {
 	
 
 	// Data for calculation
-	private int[][] _data = null;
+	private int[][] _data;
 	
 	// Priority queue for non-finished nodes
-	BinaryHeap _queue = null;
+	int[] _queue;
 }
