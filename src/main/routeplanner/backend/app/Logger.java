@@ -72,6 +72,12 @@ public class Logger {
 		_writer.flush();
 	}
 	
+	// Close the underlying stream
+	public void close() throws IOException {
+		
+		_writer.close();
+	}
+	
 	// Log message with level INFO
 	public void info(String message) throws IOException {
 		log(Level.INFO, message);

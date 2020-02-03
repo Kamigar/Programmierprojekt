@@ -1,5 +1,6 @@
 package routeplanner.backend.app;
 
+import java.util.HashMap;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
@@ -13,7 +14,10 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 
-import routeplanner.backend.model.*;
+import routeplanner.backend.app.App.FatalFailure;
+import routeplanner.backend.app.App.Code;
+import routeplanner.backend.app.App.Mode;
+import routeplanner.backend.app.App.Parameters;
 
 /*
  * Program flow and user interaction
@@ -21,82 +25,18 @@ import routeplanner.backend.model.*;
 public class Main {
 	
 	/*
-	 * Return codes of program
+	 * Exception class for bad parameter
 	 */
-	static enum Code {
-
-		SUCCESS(0),
-		
-		UNHANDLED_EXCEPTION(-99),
-		IO_EXCEPTION(-1),
-		
-		BAD_PARAMETER(-2),
-		BAD_HEADER(-3),
-		BAD_NODE(-4),
-		BAD_EDGE(-5),
-		BAD_REQUEST(-6);
-		
-		private Code(int value) { _value = value; }
-		
-		public int value() { return _value; }
-		
-		private int _value;
-	}	
-
-	// Exception classes
-
-	static class FatalFailure extends Exception {
-		
-		private static final long serialVersionUID = 988623077434694182L;
-
-		public FatalFailure(Code code, String message) {
-			super(message);
-			_code = code;
-		}
-		
-		public Code code() {
-			return _code;
-		}
-		
-		private Code _code;
-	}
-	
 	private static class BadParameterException extends Exception {
 		
 		private static final long serialVersionUID = -6297306542282662293L;
 
 		public BadParameterException(String detail) { super(detail); }
 	}
-	
-	/*
-	 * Calculation modes of the program
-	 */
-	static enum Mode {
-		OTO, // one-to-one
-		OTA, // one-to-all
-		OTM, // one-to-many
-		NNI, // next-node-iterative
-		NNF, // next-node-fast
-	}
 
-	/*
-	 * Parameters for the program execution
-	 */
-	static class Parameters {
-		
-		public BufferedReader structureIn = null;
-		public BufferedReader requestIn = null;
-		public BufferedWriter requestOut = null;
-		public BufferedWriter logOut = null;
-		public Mode mode = Mode.OTO;
-		public int start = -1;
-		public Logger.Level logLevel = null;
-		public boolean isTolerant = false;
-	}
-	
+
 	// Read command line parameters
-	private static Parameters readParameters(String[] args)
-			throws BadParameterException, IOException {
+	private static Parameters readParameters(String[] args) throws BadParameterException, IOException {
 		
 		Parameters p = new Parameters();
 		
@@ -187,6 +127,12 @@ public class Main {
 			case "-nnf":
 				
 				p.mode = Mode.NNF;
+				break;
+				
+			case "--server":
+			case "-srv":
+				
+				p.mode = Mode.SRV;
 				break;
 				
 			case "--tolerant":
@@ -287,25 +233,73 @@ public class Main {
 		return p;
 	}
 	
-	// Run garbage collection
-	private static void finishInitialization(Logger logger) throws IOException {
+	/*
+	 * Shutdown hook - Runs after program termination
+	 *   Close I/O streams and stop server
+	 */
+	public static class ShutdownHook extends Thread {
 		
-		logger.info("Run garbage collection");
+		@Override
+		public void run() {
+			
+			try {
 
-		Runtime.getRuntime().gc();
+				if (server != null) {
+					
+					if (logger != null)
+						logger.info("Stopping server");
+					
+					server.stop(1);
+				}	
+				
+				if (param != null) {
+					
+					if (param.structureIn != null && param.structureIn != param.requestIn)
+						param.structureIn.close();
+					
+					if (param.requestIn != null)
+						param.requestIn.close();
+					
+					if (param.requestOut != null && param.requestOut != param.logOut)
+						param.requestOut.close();
+
+					// Note: 'param.logOut' will be closed through logger
+				}
+
+				if (logger != null) {
+					
+					logger.info("Execution finished");
+					logger.close();
+				}
+
+			} catch (IOException ex) {
+				
+				System.out.println("I/O exception while shutting down application");
+			}
+		}
+		
+		public Parameters param;
+		public Logger logger;
+		public Server server;
 	}
-
+	
 	// Main function
 	public static void main(String[] args) {
-
-		Parameters param = null;
-		Logger logger = null;
+		
 		try {
 			
+			ShutdownHook hook = new ShutdownHook();
+			Runtime.getRuntime().addShutdownHook(hook);
+
+			Parameters param = null;
+			Logger logger = null;
+			App app = new App();	
+
 			try {
 			
 				// Read command line parameters
 				param = readParameters(args);
+				hook.param = param;
 				
 			} catch (BadParameterException ex) {
 				
@@ -316,49 +310,86 @@ public class Main {
 			}
 			
 			logger = new Logger(param.logLevel, param.logOut);
-			
+			hook.logger = logger;
+
+
 			// Read graph
-			Node[] nodes = ReadGraphApp.run(param, logger);
+			app.readGraph(param, logger);
 
+
+			// Prepare data for calculation
+			
 			logger.info(System.lineSeparator() + "Prepare data for calculation");
-
+			
+			long startTime = System.nanoTime();
+			
 			switch (param.mode) {
 			
 			case OTO:
 			case OTA:
 			case OTM:
 				
-				DijkstraApp dijkstra = new DijkstraApp();
-
-				long startTime = System.nanoTime();
-				
-				dijkstra.prepare(nodes);
-				finishInitialization(logger);
-
-				long endTime = System.nanoTime();
-				
-				logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
-
-				// Run Dijkstra calculation
-				dijkstra.run(param, nodes, logger);
+				app.prepareDijkstra();
 				break;
 				
 			case NNI:
 			case NNF:
 				
-				NextNodeApp nextNode = new NextNodeApp();
+				app.prepareNextNode();
+				break;
 				
-				startTime = System.nanoTime();
+			case SRV:
 				
-				nextNode.prepare(nodes);
-				finishInitialization(logger);
+				app.prepare();
+				break;
+			}
+			
+			Runtime.getRuntime().gc();
 
-				endTime = System.nanoTime();
+			long endTime = System.nanoTime();
 
-				logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
+			logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
 
-				// Run next node calculation
-				nextNode.run(param, nodes, logger);
+
+			// Run calculation(s)
+
+			switch (param.mode) {
+			
+			case OTO:
+				
+				app.runMultipleDijkstra(param, logger);
+				break;
+				
+			case OTA:
+			case OTM:
+				
+				app.runSingleDijkstra(param, logger);
+				break;
+				
+			case NNI:
+			case NNF:
+				
+				app.runNextNode(param, logger);
+				break;
+				
+			case SRV:
+				
+				Server server = new Server();
+				
+				HashMap<String, byte[]> html = new HashMap<String, byte[]>();
+
+				InputStream s = Main.class.getResourceAsStream("/html/index.html");
+				byte[] data = s.readAllBytes();
+				s.close();
+
+				html.put("/", data);
+				html.put("/index.html", data);
+
+				server.start(80, 10, html, app, logger);
+				hook.server = server;
+				
+				System.out.println(System.lineSeparator() + "Server started... Press [enter] to shut down");
+				System.in.read();
 				break;
 			}
 
@@ -383,31 +414,6 @@ public class Main {
 
 			System.exit(Code.UNHANDLED_EXCEPTION.value());
 
-		} finally {
-			
-			try {
-			
-				if (logger != null)
-					logger.flush();
-
-				if (param != null) {
-
-					if (param.structureIn != null)
-						param.structureIn.close();
-					if (param.requestIn != null)
-						param.requestIn.close();
-					if (param.requestOut != null)
-						param.requestOut.close();
-					if (param.logOut != null)
-						param.logOut.close();
-				}
-				
-			} catch (IOException ex) {
-				
-				System.out.println("Error while closing files");
-				System.out.println("  " + ex.getMessage());
-				System.exit(Code.IO_EXCEPTION.value());
-			}
 		}
 
 		System.exit(Code.SUCCESS.value());
