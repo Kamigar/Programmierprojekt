@@ -3,6 +3,7 @@ package routeplanner.backend.app;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.URL;
 
 import routeplanner.backend.model.Node;
 
@@ -57,6 +58,8 @@ public class App {
 	 * Calculation modes of the program
 	 */
 	static enum Mode {
+		NONE,
+		
 		OTO, // one-to-one
 		OTA, // one-to-all
 		OTM, // one-to-many
@@ -74,8 +77,10 @@ public class App {
 		public BufferedReader requestIn = null;
 		public BufferedWriter requestOut = null;
 		public BufferedWriter logOut = null;
-		public Mode mode = Mode.OTO;
+		public Mode mode = Mode.NONE;
 		public int start = -1;
+		public int port = 80;
+		public URL htmlDirectory = Parameters.class.getResource("/html");
 		public Logger.Level logLevel = null;
 		public boolean isTolerant = false;
 	}
@@ -173,7 +178,9 @@ public class App {
 		
 		_dijkstra.getResult(_nodes);
 
-		if (param.mode == Mode.OTA) {
+		switch (param.mode) {
+		
+		case OTA:
 
 			// Output result
 			for (Node node : _nodes) {
@@ -184,9 +191,10 @@ public class App {
 				param.requestOut.newLine();
 
 				logger.info(line);
-			}	
+			}		
+			break;	
 
-		} else {
+		case OTM:
 			
 			// Read multiple requests
 			logger.info(System.lineSeparator()
@@ -224,8 +232,13 @@ public class App {
 				param.requestOut.newLine();
 
 				logger.info("Distance: " + dst.distance() + System.lineSeparator());
-			}
-		}	
+			}	
+			break;
+			
+		default:
+			// Should never happen
+			throw new FatalFailure(Code.BAD_PARAMETER, "Wrong mode for single Dijkstra calculation");
+		}
 	}
 	
 	// Calculate distances from multiple starting points
@@ -348,8 +361,7 @@ public class App {
 
 			default:
 				// Should never happen
-				distance = Double.NaN; startTime = 0; endTime = 0;
-				break;
+				throw new FatalFailure(Code.BAD_PARAMETER, "Wrong mode for next node calculation");
 			}
 			
 			logger.info("Nearest node found in " + (double)(endTime - startTime) / 1000000 + " ms" + System.lineSeparator());

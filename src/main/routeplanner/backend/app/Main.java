@@ -7,6 +7,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -109,6 +110,7 @@ public class Main {
 		String structureIn = null, requestIn = null;
 		String requestOut = null, logOut = null;
 		
+		// Parse command line parameters
 		for (int i = 0; i < args.length; i++) {
 			
 			switch (args[i]) {
@@ -151,6 +153,12 @@ public class Main {
 					throw new BadParameterException("No log file provided");
 				
 				logOut = args[i];
+				break;
+				
+			case "--one-to-one":
+			case "-oto":
+				
+				p.mode = Mode.OTO;
 				break;
 				
 			case "--one-to-all":
@@ -201,6 +209,36 @@ public class Main {
 				p.mode = Mode.SRV;
 				break;
 				
+			case "--port":
+			case "-p":
+				
+				i++;
+				if (args.length == i)
+					throw new BadParameterException("No port number provided");
+				
+				try {
+					p.port = Integer.parseUnsignedInt(args[i]);
+				} catch (NumberFormatException ex) {
+					throw new BadParameterException("Bad port number provided");
+				}
+				break;
+				
+			case "--html-directory":
+			case "-d":
+				
+				i++;
+				if (args.length == i)
+					throw new BadParameterException("No HTML directory provided");
+				
+				String dir = new File(args[i]).toURI().toString();
+
+				// Remove trailing '/' from directory path
+				if (dir.endsWith("/"))
+					dir = dir.substring(0, dir.length() - 1);
+
+				p.htmlDirectory = new URL(dir);
+				break;
+				
 			case "--tolerant":
 			case "-t":
 				
@@ -236,11 +274,19 @@ public class Main {
 				System.exit(Code.SUCCESS.value());
 
 			default:
-				
+
 				throw new BadParameterException("Unknown parameter. Use -h for help");
 			}
 		}
 		
+		// Throw exception if no operation/mode (e.g. '--oto') was specified
+		if (p.mode == Mode.NONE) {
+			throw new BadParameterException("No operation specified. Use -h for help");
+		}
+		
+
+		// Create I/O reader/writer
+
 		try {
 			
 			if (structureIn == null)
@@ -285,6 +331,7 @@ public class Main {
 		}
 		
 
+		// Set log level
 		if (p.logLevel == null) {
 			
 			if (p.requestOut == p.logOut)
@@ -299,6 +346,7 @@ public class Main {
 	// Return HashMap (filename -> data) of files in directory 'url'
 	private static HashMap<String, byte[]> getHtmlData(URL url, Logger logger) throws IOException, FatalFailure {
 		
+		System.out.println(url.toString());
 		HashMap<String, byte[]> res = new HashMap<String, byte[]>();
 		
 		if (url.getProtocol().contentEquals("jar")) {
@@ -414,6 +462,10 @@ public class Main {
 				
 				app.prepare();
 				break;
+				
+			case NONE:
+				// Should never happen
+				throw new FatalFailure(Code.BAD_PARAMETER, "No mode provided");
 			}
 			
 			Runtime.getRuntime().gc();
@@ -448,14 +500,18 @@ public class Main {
 				
 				Server server = new Server();
 
-				HashMap<String, byte[]> html = getHtmlData(Main.class.getResource("/html"), logger);
+				HashMap<String, byte[]> html = getHtmlData(param.htmlDirectory, logger);
 
-				server.start(80, 10, html, app, logger);
+				server.start(param.port, 10, html, app, logger);
 				hook.server = server;
 				
 				System.out.println(System.lineSeparator() + "Server started... Press [enter] to shut down");
 				System.in.read();
 				break;
+				
+			case NONE:
+				// Should never happen
+				throw new FatalFailure(Code.BAD_PARAMETER, "No mode provided");
 			}
 
 		} catch (FatalFailure failure) {
