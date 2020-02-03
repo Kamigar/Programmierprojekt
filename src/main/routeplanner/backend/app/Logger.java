@@ -19,6 +19,7 @@ public class Logger {
 		ERROR
 	}
 	
+
 	// Default log level (not explicitly specified)
 	public static Level defaultLogLevel = Level.WARNING;
 	// Default log level, if output and log streams are the same
@@ -30,6 +31,7 @@ public class Logger {
 	}
 	
 	// Initialize logger with the given log level
+	//   Note: Do not close logger (or 'System.out' will be closed)
 	public Logger(Level level) {
 		this(level, new BufferedWriter(new OutputStreamWriter(System.out)));
 	}

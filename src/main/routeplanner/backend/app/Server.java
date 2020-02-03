@@ -112,6 +112,10 @@ public class Server {
 	// Start the server instance
 	public void start(int port, int backlog, HashMap<String, byte[]> html, App app, Logger logger) throws IOException {
 		
+		logger.info("Broadcasting files:");
+		for (String path : html.keySet())
+			logger.info(path);
+
 		_html = html;
 		_logger = logger;
 		_app = app;

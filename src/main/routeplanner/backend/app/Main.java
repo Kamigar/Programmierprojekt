@@ -1,6 +1,10 @@
 package routeplanner.backend.app;
 
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
@@ -10,6 +14,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
@@ -34,6 +40,66 @@ public class Main {
 		public BadParameterException(String detail) { super(detail); }
 	}
 
+	/*
+	 * Shutdown hook - Runs after program termination
+	 *   Close I/O streams and stop server
+	 */
+	public static class ShutdownHook extends Thread {
+		
+		@Override
+		public void run() {
+			
+			try {
+
+				if (server != null) {
+					
+					if (logger != null)
+						logger.info("Stopping server");
+					
+					server.stop(1);
+				}	
+				
+				if (param != null) {
+					
+					if (param.structureIn != null && param.structureIn != stdinReader && param.structureIn != param.requestIn)
+						param.structureIn.close();
+					
+					if (param.requestIn != null && param.requestIn != stdinReader)
+						param.requestIn.close();
+					
+					if (param.requestOut != null && param.requestOut != stdoutWriter && param.requestOut != param.logOut)
+						param.requestOut.close();
+
+					// Note: 'param.logOut' will be closed through logger
+				}
+
+				if (logger != null) {
+					
+					logger.info("Execution finished");
+
+					if (param.logOut != stdoutWriter)
+						logger.close();
+					else
+						logger.flush();
+				}
+
+			} catch (IOException ex) {
+				
+				System.out.println("I/O exception while shutting down application");
+			}
+		}
+		
+		public Parameters param;
+		public Logger logger;
+		public Server server;
+	}
+	
+
+	// Default stream writers (System.in/System.out)
+	private static final Charset utf8 = Charset.forName("utf-8");
+	private static final BufferedReader stdinReader = new BufferedReader(new InputStreamReader(System.in, utf8));
+	private static final BufferedWriter stdoutWriter = new BufferedWriter(new OutputStreamWriter(System.out, utf8));
+	
 
 	// Read command line parameters
 	private static Parameters readParameters(String[] args) throws BadParameterException, IOException {
@@ -175,38 +241,35 @@ public class Main {
 			}
 		}
 		
-		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
-		BufferedWriter stdout = new BufferedWriter(new OutputStreamWriter(System.out, "UTF-8"));
-					
 		try {
 			
 			if (structureIn == null)
-				p.structureIn = stdin;
+				p.structureIn = stdinReader;
 			else
-				p.structureIn = new BufferedReader(new InputStreamReader(new FileInputStream(structureIn), "UTF-8"));
+				p.structureIn = new BufferedReader(new InputStreamReader(new FileInputStream(structureIn), utf8));
 			
 			if (requestIn == null)
-				p.requestIn = stdin;
+				p.requestIn = stdinReader;
 			else
 				if (structureIn != null && Files.exists(Paths.get(requestIn))
 					&& Files.isSameFile(Paths.get(requestIn), Paths.get(structureIn)))
 					p.requestIn = p.structureIn;
 				else
-					p.requestIn = new BufferedReader(new InputStreamReader(new FileInputStream(requestIn), "UTF-8"));
+					p.requestIn = new BufferedReader(new InputStreamReader(new FileInputStream(requestIn), utf8));
 			
 			if (requestOut == null)
-				p.requestOut = stdout;
+				p.requestOut = stdoutWriter;
 			else
-				p.requestOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(requestOut), "UTF-8"));
+				p.requestOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(requestOut), utf8));
 			
 			if (logOut == null)
-				p.logOut = stdout;
+				p.logOut = stdoutWriter;
 			else
 				if (requestOut != null && Files.exists(Paths.get(logOut))
 					&& Files.isSameFile(Paths.get(logOut), Paths.get(requestOut)))
 					p.logOut = p.requestOut;
 				else
-					p.logOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logOut), "UTF-8"));	
+					p.logOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logOut), utf8));	
 		
 		} catch (FileNotFoundException ex) {
 			
@@ -233,55 +296,57 @@ public class Main {
 		return p;
 	}
 	
-	/*
-	 * Shutdown hook - Runs after program termination
-	 *   Close I/O streams and stop server
-	 */
-	public static class ShutdownHook extends Thread {
+	// Return HashMap (filename -> data) of files in directory 'url'
+	private static HashMap<String, byte[]> getHtmlData(URL url, Logger logger) throws IOException, FatalFailure {
 		
-		@Override
-		public void run() {
+		HashMap<String, byte[]> res = new HashMap<String, byte[]>();
+		
+		if (url.getProtocol().contentEquals("jar")) {
 			
-			try {
-
-				if (server != null) {
-					
-					if (logger != null)
-						logger.info("Stopping server");
-					
-					server.stop(1);
-				}	
+			// Skip 'file:' at beginning and split as 'path'!'resourceFolder'
+			String path = url.getPath().substring(5, url.getPath().indexOf('!'));
+			String resourceFolder = url.getPath().substring(url.getPath().indexOf('!') + 2, url.getPath().length());
+			
+			JarFile jar = new JarFile(path);
+			Enumeration<JarEntry> entries = jar.entries();
+			while (entries.hasMoreElements()) {
 				
-				if (param != null) {
-					
-					if (param.structureIn != null && param.structureIn != param.requestIn)
-						param.structureIn.close();
-					
-					if (param.requestIn != null)
-						param.requestIn.close();
-					
-					if (param.requestOut != null && param.requestOut != param.logOut)
-						param.requestOut.close();
+				String file = entries.nextElement().getName();
 
-					// Note: 'param.logOut' will be closed through logger
+				// Ignore files outside 'resourceFolder' and directories
+				if (file.startsWith(resourceFolder) && file.lastIndexOf("/") < file.length() - 1) {
+					
+					InputStream s = Main.class.getResourceAsStream("/" + file);
+					res.put(file.substring(resourceFolder.length(), file.length()), s.readAllBytes());
+					s.close();
 				}
-
-				if (logger != null) {
-					
-					logger.info("Execution finished");
-					logger.close();
-				}
-
-			} catch (IOException ex) {
-				
-				System.out.println("I/O exception while shutting down application");
 			}
+			jar.close();
+
+		} else if (url.getProtocol().contentEquals("file")) {
+			
+			LinkedList<String> files = new LinkedList<String>();
+
+			// Find all files recursively
+			Files.find(Paths.get(url.getPath()), 128,
+				(path, filter) -> filter.isRegularFile())
+					.forEach(x -> files.add(x.toString()));
+
+			for (String file : files) {
+				
+				FileInputStream s = new FileInputStream(file);
+				res.put(file.substring(url.getPath().length(), file.length()), s.readAllBytes());
+				s.close();
+			}
+
+		} else {
+			
+			logger.error("Resource folder uses unsupported protocol '" + url.getProtocol() + "'");
+			throw new FatalFailure(Code.IO_EXCEPTION, "Resources with unsupported protocol");
 		}
-		
-		public Parameters param;
-		public Logger logger;
-		public Server server;
+		return res;
 	}
+	
 	
 	// Main function
 	public static void main(String[] args) {
@@ -314,7 +379,14 @@ public class Main {
 
 
 			// Read graph
+
 			app.readGraph(param, logger);
+			
+			if (param.structureIn != stdinReader && param.structureIn != param.requestIn) {
+				// Close structure input stream
+				param.structureIn.close();
+				param.structureIn = null;
+			}
 
 
 			// Prepare data for calculation
@@ -348,7 +420,7 @@ public class Main {
 
 			long endTime = System.nanoTime();
 
-			logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds");
+			logger.info("Initialization finished in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());
 
 
 			// Run calculation(s)
@@ -375,15 +447,8 @@ public class Main {
 			case SRV:
 				
 				Server server = new Server();
-				
-				HashMap<String, byte[]> html = new HashMap<String, byte[]>();
 
-				InputStream s = Main.class.getResourceAsStream("/html/index.html");
-				byte[] data = s.readAllBytes();
-				s.close();
-
-				html.put("/", data);
-				html.put("/index.html", data);
+				HashMap<String, byte[]> html = getHtmlData(Main.class.getResource("/html"), logger);
 
 				server.start(80, 10, html, app, logger);
 				hook.server = server;
@@ -410,7 +475,7 @@ public class Main {
 		} catch (Exception ex) {
 			
 			System.out.println(System.lineSeparator() + "Unhandled exception occured");
-			System.out.println(ex.getStackTrace());
+			ex.printStackTrace(System.out);
 
 			System.exit(Code.UNHANDLED_EXCEPTION.value());
 
