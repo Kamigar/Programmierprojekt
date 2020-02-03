@@ -14,6 +14,7 @@ public class Logger {
 	 */
 	public enum Level {
 		
+		INSTRUCTION,
 		INFO,
 		WARNING,
 		ERROR
@@ -80,6 +81,11 @@ public class Logger {
 		_writer.close();
 	}
 	
+	// Log message with level INSTRUCTION
+	public void instruction(String message) throws IOException {
+		log(Level.INSTRUCTION, message);
+	}
+	
 	// Log message with level INFO
 	public void info(String message) throws IOException {
 		log(Level.INFO, message);
@@ -93,6 +99,16 @@ public class Logger {
 	// Log message with level ERROR
 	public void error(String message) throws IOException {
 		log(Level.ERROR, message);
+	}
+	
+	// Return the current level of the logger
+	public Level level() {
+		return _level;
+	}
+	
+	// Set the current level of the logger
+	public void setLevel(Level level) {
+		_level = level;
 	}
 	
 

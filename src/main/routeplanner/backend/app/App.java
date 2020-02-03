@@ -173,31 +173,28 @@ public class App {
 		long endTime = System.nanoTime();	
 
 
-		logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator()
-				+ System.lineSeparator() + "Distances: [trgID] [distance]");
+		logger.info("Path calculated in " + (double)(endTime - startTime) / 1000000000 + " seconds" + System.lineSeparator());
 		
 		_dijkstra.getResult(_nodes);
 
 		switch (param.mode) {
 		
 		case OTA:
-
+			
 			// Output result
 			for (Node node : _nodes) {
 				
-				String line = "" + node.id() + " " + node.distance();
-				
-				param.requestOut.write(line);
+				param.requestOut.write("" + node.id() + " " + node.distance());
 				param.requestOut.newLine();
 
-				logger.info(line);
+				logger.info("" + param.start + " -> " + node.id() + " : " + node.distance());
 			}		
 			break;	
 
 		case OTM:
 			
 			// Read multiple requests
-			logger.info(System.lineSeparator()
+			logger.instruction(System.lineSeparator()
 				+ "Input format: [trgID] e.g. 18445" + System.lineSeparator()
 				+ "  use multiple lines for multiple requests" + System.lineSeparator()
 				+ "  end input with <EOF> (CTRL+D)" + System.lineSeparator());
@@ -230,8 +227,8 @@ public class App {
 
 				param.requestOut.write("" + dst.distance());
 				param.requestOut.newLine();
-
-				logger.info("Distance: " + dst.distance() + System.lineSeparator());
+				
+				logger.info("" + param.start + " -> " + trgId + " : " + dst.distance() + System.lineSeparator());
 			}	
 			break;
 			
@@ -244,7 +241,7 @@ public class App {
 	// Calculate distances from multiple starting points
 	public void runMultipleDijkstra(Parameters param, Logger logger) throws IOException, FatalFailure {
 
-		logger.info(System.lineSeparator()
+		logger.instruction(System.lineSeparator()
 			+ "Input format: [srcID] [trgID] e.g. 18445 12343" + System.lineSeparator()
 			+ "  use multiple lines for multiple requests" + System.lineSeparator()
 			+ "  end input with <EOF> (CTRL+D)" + System.lineSeparator());
@@ -299,15 +296,15 @@ public class App {
 
 			param.requestOut.write("" + dst.distance());
 			param.requestOut.newLine();
-
-			logger.info("Distance: " + dst.distance() + System.lineSeparator());
+			
+			logger.info("" + request[0] + " -> " + request[1] + " : " + dst.distance() + System.lineSeparator());
 		}		
 	}
 	
 	// Calculate next node
 	public void runNextNode(Parameters param, Logger logger) throws IOException, FatalFailure {
 		
-		logger.info(System.lineSeparator()
+		logger.instruction(System.lineSeparator()
 				+ "Input format: [latitude] [longitude] e.g. 49.2 9.8" + System.lineSeparator()
 				+ "  use multiple lines for multiple requests" + System.lineSeparator()
 				+ "  end input with <EOF> (CTRL+D)" + System.lineSeparator());
@@ -364,7 +361,7 @@ public class App {
 				throw new FatalFailure(Code.BAD_PARAMETER, "Wrong mode for next node calculation");
 			}
 			
-			logger.info("Nearest node found in " + (double)(endTime - startTime) / 1000000 + " ms" + System.lineSeparator());
+			logger.info("Nearest node(s) found in " + (double)(endTime - startTime) / 1000000 + " ms" + System.lineSeparator());
 			
 			Node[] result = _nextNode.getResult(_nodes);
 
@@ -375,9 +372,10 @@ public class App {
 				param.requestOut.write(" " + n.id());
 			param.requestOut.newLine();
 
+			logger.info("Distance to ( " + req[1] + " , " + req[0] + " ) : " + distance);
 			for (Node n : result)
-				logger.info("Node: " + n.id() + " latitude: " + n.latitude() + " longitude: " + n.longitude());
-			logger.info("Distance: " + distance + System.lineSeparator());
+				logger.info("  node: " + n.id() + " ( " + n.latitude() + " , " + n.longitude() + " )");
+			logger.info("");
 		}	
 	}
 	

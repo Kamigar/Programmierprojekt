@@ -332,6 +332,7 @@ public class Main {
 		
 
 		// Set log level
+
 		if (p.logLevel == null) {
 			
 			if (p.requestOut == p.logOut)
@@ -339,6 +340,9 @@ public class Main {
 			else
 				p.logLevel = Logger.defaultLogLevel;
 		}
+		
+		if (p.logLevel == Logger.Level.INFO && p.logOut == stdoutWriter)
+			p.logLevel = Logger.Level.INSTRUCTION;
 
 		return p;
 	}
@@ -346,7 +350,6 @@ public class Main {
 	// Return HashMap (filename -> data) of files in directory 'url'
 	private static HashMap<String, byte[]> getHtmlData(URL url, Logger logger) throws IOException, FatalFailure {
 		
-		System.out.println(url.toString());
 		HashMap<String, byte[]> res = new HashMap<String, byte[]>();
 		
 		if (url.getProtocol().contentEquals("jar")) {
@@ -498,6 +501,10 @@ public class Main {
 				
 			case SRV:
 				
+				// Increase log level to prevent logging of instructions for every request
+				if (logger.level() == Logger.Level.INSTRUCTION)
+					logger.setLevel(Logger.Level.INFO);
+				
 				Server server = new Server();
 
 				HashMap<String, byte[]> html = getHtmlData(param.htmlDirectory, logger);
@@ -534,7 +541,6 @@ public class Main {
 			ex.printStackTrace(System.out);
 
 			System.exit(Code.UNHANDLED_EXCEPTION.value());
-
 		}
 
 		System.exit(Code.SUCCESS.value());
