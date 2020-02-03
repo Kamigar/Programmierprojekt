@@ -44,16 +44,19 @@ public class Server {
 				
 				if (query.startsWith("oto")) {
 					
+					// Calculate Dijkstra one-to-one
 					param.mode = Mode.OTO;
 					_app.runMultipleDijkstra(param, _logger);
 
 				} else if (query.startsWith("nni")) {
 					
+					// Calculate next node iteratively
 					param.mode = Mode.NNI;
 					_app.runNextNode(param, _logger);
 
 				} else if (query.startsWith("nnf")) {
 					
+					// Calculate next node with k-d tree
 					param.mode = Mode.NNF;
 					_app.runNextNode(param, _logger);
 
@@ -89,36 +92,52 @@ public class Server {
 		@Override
 		public void handle(HttpExchange t) throws IOException {
 			
-			byte[] data = _html.get(t.getRequestURI().getPath());
+			// Check if request should be redirected
 			
-			if (data != null) {
+			String redirection = _redirections.get(t.getRequestURI().getPath());
 			
-				t.sendResponseHeaders(200, data.length);
-				t.getResponseBody().write(data);
+			if (redirection != null) {
+				
+				t.getResponseHeaders().add("Location", redirection);
+				t.sendResponseHeaders(302, 0);
 				t.getResponseBody().close();
 
 			} else {
+
+				// Check if file could be served
 				
-				byte[] msg = ("File not found").getBytes();
+				byte[] data = _html.get(t.getRequestURI().getPath());
 				
-				t.sendResponseHeaders(404, msg.length);
-				t.getResponseBody().write(msg);
-				t.getResponseBody().close();
+				if (data != null) {
+				
+					t.sendResponseHeaders(200, data.length);
+					t.getResponseBody().write(data);
+					t.getResponseBody().close();
+
+				} else {
+					
+					byte[] msg = ("File not found").getBytes();
+					
+					t.sendResponseHeaders(404, msg.length);
+					t.getResponseBody().write(msg);
+					t.getResponseBody().close();
+				}	
 			}
 		}
 	}
 	
 	
 	// Start the server instance
-	public void start(int port, int backlog, HashMap<String, byte[]> html, App app, Logger logger) throws IOException {
+	public void start(int port, int backlog, HashMap<String, byte[]> html, HashMap<String, String> redirections, App app, Logger logger) throws IOException {
 		
 		logger.info("Broadcasting files:");
 		for (String path : html.keySet())
 			logger.info(path);
 
 		_html = html;
-		_logger = logger;
+		_redirections = redirections;
 		_app = app;
+		_logger = logger;
 		
 		_server = HttpServer.create(new InetSocketAddress(port), backlog);
 		_server.createContext("/", new HtmlHandler());
@@ -139,6 +158,9 @@ public class Server {
 	
 	// Files to serve (URI-path -> data)
 	private HashMap<String, byte[]> _html;
+	
+	// Redirections (URI-path -> URI-path)
+	private HashMap<String, String> _redirections;
 	
 	// Program implementation
 	private App _app;

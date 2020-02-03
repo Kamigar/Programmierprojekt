@@ -100,6 +100,7 @@ public class Main {
 	static final int serverPortNumber = 80;
 	static final int serverBacklogSize = 10;
 	static final int serverShutdownDelay = 1;
+	static final String serverRootRedirection = "/index.html";
 
 	static final String htmlDirPath = "/html";
 	static final String helpFilePath = "/help.txt";
@@ -517,7 +518,11 @@ public class Main {
 
 				HashMap<String, byte[]> html = getHtmlData(param.htmlDirectory, logger);
 
-				server.start(param.port, serverBacklogSize, html, app, logger);
+				HashMap<String, String> redirections = new HashMap<String, String>();
+				redirections.put("/", serverRootRedirection);
+				
+				// Start server
+				server.start(param.port, serverBacklogSize, html, redirections, app, logger);
 				hook.server = server;
 				
 				System.out.println(System.lineSeparator() + "Server started... Press [enter] to shut down");
