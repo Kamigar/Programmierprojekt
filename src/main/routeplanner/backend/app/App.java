@@ -79,8 +79,8 @@ public class App {
 		public BufferedWriter logOut = null;
 		public Mode mode = Mode.NONE;
 		public int start = -1;
-		public int port = 80;
-		public URL htmlDirectory = Parameters.class.getResource("/html");
+		public int port = Main.serverPortNumber;
+		public URL htmlDirectory = Parameters.class.getResource(Main.htmlDirPath);
 		public Logger.Level logLevel = null;
 		public boolean isTolerant = false;
 	}

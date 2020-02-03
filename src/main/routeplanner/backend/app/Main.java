@@ -57,7 +57,7 @@ public class Main {
 					if (logger != null)
 						logger.info("Stopping server");
 					
-					server.stop(1);
+					server.stop(serverShutdownDelay);
 				}	
 				
 				if (param != null) {
@@ -95,6 +95,14 @@ public class Main {
 		public Server server;
 	}
 	
+
+	// Some compile-time parameters
+	static final int serverPortNumber = 80;
+	static final int serverBacklogSize = 10;
+	static final int serverShutdownDelay = 1;
+
+	static final String htmlDirPath = "/html";
+	static final String helpFilePath = "/help.txt";
 
 	// Default stream writers (System.in/System.out)
 	private static final Charset utf8 = Charset.forName("utf-8");
@@ -266,10 +274,10 @@ public class Main {
 			case "--help":
 			case "-h":
 
-				InputStream reader = Main.class.getResourceAsStream("/help.txt");
+				InputStream reader = Main.class.getResourceAsStream(helpFilePath);
 				byte[] data = reader.readAllBytes();
 				
-				System.out.print(new String(data, "UTF-8"));
+				System.out.print(new String(data, utf8));
 
 				System.exit(Code.SUCCESS.value());
 
@@ -509,7 +517,7 @@ public class Main {
 
 				HashMap<String, byte[]> html = getHtmlData(param.htmlDirectory, logger);
 
-				server.start(param.port, 10, html, app, logger);
+				server.start(param.port, serverBacklogSize, html, app, logger);
 				hook.server = server;
 				
 				System.out.println(System.lineSeparator() + "Server started... Press [enter] to shut down");
