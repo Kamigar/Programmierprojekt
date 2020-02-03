@@ -1,12 +1,31 @@
 
 routeplanner - An efficient Dijkstra shortest path implementation
 
-Usage: routeplanner [OPTION]...
+Usage: routeplanner [OPERATION] [OPTION]...
 
-OPTIONS:
+
+OPERATIONS:
 
 -h, --help                      Display this help page
 
+
+The program is able to calculate shortest paths and nearest neighbors.
+You can start one of these calculations or a web server which handles requests over HTTP.
+
+-oto, --one-to-one              Calculate distances between points
+
+-ota, --one-to-all <srcID>      Calculate all distances from start point <srcID>
+
+-otm, --one-to-many <srcID>     Calculate distances from start point <srcID>
+
+-nni, --next-node-iterative     Calculate nearest neighbor iteratively
+
+-nnf, --next-node-fast          Calculate nearest neighbor with k-d tree
+
+-srv, --server                  Start HTTP web server
+
+
+OPTIONS:
 
 The program operates on 2 input (default: stdin) and 2 output (default: stdout) streams.
 
@@ -19,7 +38,7 @@ The program operates on 2 input (default: stdin) and 2 output (default: stdout) 
                                                   [srcID] [trgID] [cost] [type] [maxspeed]
 
 -r, --request-file <file>       List of distances to calculate or coordinates for nearest neighbor search
-  [default: stdin]                Input format: DEFAULT
+  [default: stdin]                Input format: --one-to-one
                                                 FOR EACH ROUTE:
 						  [srcID] [trgID]
 				  Input format: --one-to-many
@@ -30,9 +49,12 @@ The program operates on 2 input (default: stdin) and 2 output (default: stdout) 
 						  [latitude] [longitude]
 
 -o, --output-file <file>        Output of the calculated distances or the next neighbors
-  [default: stdout]               Output format: DEFAULT
+  [default: stdout]               Output format: --one-to-one, --one-to-many
                                                  FOR EACH ROUTE:
 						   [cost]
+				  Output format: --one-to-all
+				                 FOR EACH ROUTE:
+						   [trgID] [cost]
 				  Output format: --next-node-iterative, --next-node-fast
 				                 FOR EACH NEAREST NEIGHBOR:
 						   [distance] [nodeID]
@@ -41,16 +63,14 @@ The program operates on 2 input (default: stdin) and 2 output (default: stdout) 
   [default: stdout]               
 
 
-Also there is the option to start a single one-to-all or one-to-many calculation as well as a nearest
-  neighbor search (iteratively or with k-d tree)
+The web server receives/sends requests over HTTP on a specified port (default: 80).
+Also all files in the HTML directory are served (with redirection from / to /index.html).
 
--ota, --one-to-all <srcID>      Calculate all distances from start point <srcID>
+-p, --port <port>               Port of the HTTP server
+  [default: 80]
 
--otm, --one-to-many <srcID>     Calculate distances from start point <srcID>
-
--nni, --next-node-iterative     Calculate nearest neighbor iteratively
-
--nnf, --next-node-fast          Calculate nearest neighbor with k-d tree
+-d, --html-directory <dir>      Directory which will be accessible through the HTTP server
+  [default: {resources}/html]
 
 
 The log verbosity defaults to --warning (--quiet if --output-file is same as --log-file).
@@ -74,10 +94,10 @@ Interactive use:
   For interactive use of the program, the options -v and -t are very useful.
 
     Only user input:
-      routeplanner -v -t
+      routeplanner -oto -v -t
 
     Graph structure from file, distance request from user:
-      routeplanner -v -t -i graph.fmi
+      routeplanner -nnf -v -t -i graph.fmi
 
 
 Working with pipes:
@@ -85,8 +105,8 @@ Working with pipes:
   Because the default input/output streams are stdin/stdout, the program could be used with UNIX pipes.
 
     Read graph and requests from different files and write distances to a third file with pipes:
-      (cat graph.fmi; cat requests.que) | routeplanner > distances.ist
+      (cat graph.fmi; cat requests.que) | routeplanner -oto > distances.ist
 
     Read graph and requests from different files and print only the calculation time:
-      (cat graph.fmi; cat requests.que) | routeplanner -v | grep seconds
+      (cat graph.fmi; cat requests.que) | routeplanner -oto -v | grep seconds
 
