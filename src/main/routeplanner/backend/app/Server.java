@@ -33,8 +33,6 @@ public class Server {
 			
 			try {
 				
-				String query = t.getRequestURI().getQuery();
-
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
 				
 				Parameters param = new Parameters();
@@ -42,29 +40,100 @@ public class Server {
 				param.requestIn = new BufferedReader(new InputStreamReader(t.getRequestBody()));
 				param.requestOut = new BufferedWriter(new OutputStreamWriter(out));
 				
-				if (query.startsWith("oto")) {
+
+				// Parse parameters
+
+				if (t.getRequestURI().getQuery() == null)
+					throw new FatalFailure(Code.BAD_REQUEST, "Request query is empty");
+				
+				String[] options = t.getRequestURI().getQuery().split("&");
+				for (String option : options) {
 					
-					// Calculate Dijkstra one-to-one
-					param.mode = Mode.OTO;
-					_app.runMultipleDijkstra(param, _logger);
-
-				} else if (query.startsWith("nni")) {
+					switch (option) {
 					
-					// Calculate next node iteratively
-					param.mode = Mode.NNI;
-					_app.runNextNode(param, _logger);
+					case "oto":
+						
+						param.mode = Mode.OTO;
+						break;
+						
+					case "ota":
+						
+						param.mode = Mode.OTA;
+						break;
+						
+					case "otm":
+						
+						param.mode = Mode.OTM;
+						break;
+						
+					case "nni":
+						
+						param.mode = Mode.NNI;
+						break;
+						
+					case "nnf":
+						
+						param.mode = Mode.NNF;
+						break;
+						
+					case "pl":
+						
+						param.printLocation = true;
+						break;
+						
+					case "pd":
+						
+						param.printDistance = true;
+						break;
+						
+					case "pp":
+						
+						param.printPath = true;
+						break;
+						
+					default:
+						
+						try {
+							// Parse start point for single Dijkstra calculation
+							param.start = Integer.parseUnsignedInt(option);
 
-				} else if (query.startsWith("nnf")) {
-					
-					// Calculate next node with k-d tree
-					param.mode = Mode.NNF;
-					_app.runNextNode(param, _logger);
-
-				} else {
-
-					throw new FatalFailure(Code.BAD_REQUEST, "Unknown operation");
+						} catch (NumberFormatException ex) {
+							
+							throw new FatalFailure(Code.BAD_REQUEST, "Unknown operation");
+						}
+					}
 				}
 				
+				
+				// Run calculation
+				
+				switch (param.mode) {
+				
+				case OTO:
+					
+					_app.runMultipleDijkstra(param, _logger);
+					break;
+					
+				case OTA:
+				case OTM:
+					
+					_app.runSingleDijkstra(param, _logger);
+					break;
+					
+				case NNI:
+				case NNF:
+					
+					_app.runNextNode(param, _logger);
+					break;
+					
+				default:
+					
+					throw new FatalFailure(Code.BAD_PARAMETER, "No operation provided");
+				}
+				
+				
+				// Send HTTP response
+
 				param.requestOut.flush();
 
 				t.sendResponseHeaders(200, out.size());
@@ -128,7 +197,7 @@ public class Server {
 	
 	
 	// Start the server instance
-	public void start(int port, int backlog, HashMap<String, byte[]> html, HashMap<String, String> redirections, App app, Logger logger) throws IOException {
+	public void start(int port, int backlog, String routeplannerPath, HashMap<String, byte[]> html, HashMap<String, String> redirections, App app, Logger logger) throws IOException {
 		
 		logger.info("Broadcasting files:");
 		for (String path : html.keySet())
@@ -141,7 +210,7 @@ public class Server {
 		
 		_server = HttpServer.create(new InetSocketAddress(port), backlog);
 		_server.createContext("/", new HtmlHandler());
-		_server.createContext("/routeplanner", new CalculationHandler());
+		_server.createContext(routeplannerPath, new CalculationHandler());
 		_server.setExecutor(null);
 		_server.start();
 	}

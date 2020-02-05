@@ -101,6 +101,7 @@ public class Main {
 	static final int serverBacklogSize = 10;
 	static final int serverShutdownDelay = 1;
 	static final String serverRootRedirection = "/index.html";
+	static final String serverRouteplannerPath = "/routeplanner";
 
 	static final String htmlDirPath = "/html";
 	static final String helpFilePath = "/help.txt";
@@ -246,6 +247,24 @@ public class Main {
 					dir = dir.substring(0, dir.length() - 1);
 
 				p.htmlDirectory = new URL(dir);
+				break;
+				
+			case "--print-location":
+			case "-pl":
+				
+				p.printLocation = true;
+				break;
+				
+			case "--print-distance":
+			case "-pd":
+				
+				p.printDistance = true;
+				break;
+				
+			case "--print-path":
+			case "-pp":
+				
+				p.printPath = true;
 				break;
 				
 			case "--tolerant":
@@ -509,20 +528,32 @@ public class Main {
 				break;
 				
 			case SRV:
-				
+
 				// Increase log level to prevent logging of instructions for every request
 				if (logger.level() == Logger.Level.INSTRUCTION)
 					logger.setLevel(Logger.Level.INFO);
-				
+
+				// Close request streams
+				if (param.requestIn != stdinReader) {
+					param.requestIn.close();
+					param.requestIn = null;
+				}
+				if (param.requestOut != stdoutWriter && param.requestOut != param.logOut) {
+					param.requestOut.close();
+					param.requestOut = null;
+				}
+
+
 				Server server = new Server();
 
+				// Read HTML files
 				HashMap<String, byte[]> html = getHtmlData(param.htmlDirectory, logger);
 
 				HashMap<String, String> redirections = new HashMap<String, String>();
 				redirections.put("/", serverRootRedirection);
 				
 				// Start server
-				server.start(param.port, serverBacklogSize, html, redirections, app, logger);
+				server.start(param.port, serverBacklogSize, serverRouteplannerPath, html, redirections, app, logger);
 				hook.server = server;
 				
 				System.out.println(System.lineSeparator() + "Server started... Press [enter] to shut down");
