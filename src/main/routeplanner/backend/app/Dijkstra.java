@@ -87,7 +87,6 @@ public class Dijkstra {
 			
 			_data[i] = n;
 		}
-		reset();
 	}
 	
 	// Reset distances and path for new calculation

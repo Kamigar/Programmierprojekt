@@ -137,9 +137,12 @@ public class NextNode {
 
 		_bounds = new double[] { Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY };
 		_data = new double[nodes.length * 2];
+		int[] indices = new int[nodes.length];
 		
 		for (int i = 0; i < nodes.length; i++) {
 			
+		  indices[i] = i;
+
 			_data[i * 2] = nodes[i].longitude();
 			_data[i * 2 + 1] = nodes[i].latitude();
 			
@@ -154,14 +157,20 @@ public class NextNode {
 		}
 
 		// Create k-d tree
-		_root = createTree(0, _data, 0, nodes.length - 1);
-
+		_root = createTree(0, _data, indices, 0, nodes.length - 1);
+		
 		// Create result stack
 		_stack = IntStack.create(nodes.length);
+
+		// Recreate node structure so the index of a node matches its ID
+		for (int i = 0; i < nodes.length; i++) {
+		  _data[i * 2] = nodes[i].longitude();
+		  _data[i * 2 + 1] = nodes[i].latitude();
+		}
 	}
 	
 	// Create k-d (sub)tree recursively
-	private static TreeNode createTree(int property, double[] nodes, int left, int right) {
+	private static TreeNode createTree(int property, double[] nodes, int[] indices, int left, int right) {
 		
 		if (left >= right) {
 			
@@ -170,7 +179,7 @@ public class NextNode {
 
 			// Create leaf
 			TreeNode t = new TreeNode();
-			t.value = left;
+			t.value = indices[left];
 			return t;	
 		}
 		
@@ -180,34 +189,34 @@ public class NextNode {
 		TreeNode t = new TreeNode();
 		
 		// Find median (element on position 'pos')
-		t.value = getPosition(property, nodes, left, right, pos);
+		t.value = getPosition(property, nodes, indices, left, right, pos);
 		
 		// Create subtrees
-		t.left = createTree(1 - property, nodes, left, left + pos);
-		t.right = createTree(1 - property, nodes, left + pos + 1, right);
+		t.left = createTree(1 - property, nodes, indices, left, left + pos);
+		t.right = createTree(1 - property, nodes, indices, left + pos + 1, right);
 		
 		return t;
 	}
 	
 	// Find 'pos'-th smallest element (position 'pos' in sorted array)
-	private static double getPosition(int property, double[] nodes, int left, int right, int pos) {
+	private static double getPosition(int property, double[] nodes, int[] indices, int left, int right, int pos) {
 		
 		// Partition elements into two parts
-		int pivot = partition(property, nodes, left, right);
+		int pivot = partition(property, nodes, indices, left, right);
 		int pivotPos = pivot - left;
 		
 		// Continue search in right or left part
 		if (pivotPos > pos)
-			return getPosition(property, nodes, left, pivot - 1, pos);
+			return getPosition(property, nodes, indices, left, pivot - 1, pos);
 		if (pivotPos < pos)
-			return getPosition(property, nodes, pivot + 1, right, pos - pivotPos - 1);
+			return getPosition(property, nodes, indices, pivot + 1, right, pos - pivotPos - 1);
 			
 		// Return if pivot is on position 'pos'
 		return getProperty(property, nodes, pivot);
 	}
 	
 	// Partition elements into two parts (values less or equal than pivot left, greater or equal pivot right)
-	private static int partition(int property, double[] nodes, int left, int right) {
+	private static int partition(int property, double[] nodes, int[] indices, int left, int right) {
 		
 		double pivot = getProperty(property, nodes, right);
 		
@@ -216,11 +225,11 @@ public class NextNode {
 			
 			if (getProperty(property, nodes, j) < pivot) {
 
-				swap(nodes, i, j);
+				swap(nodes, indices, i, j);
 				i++;
 			}
 		}
-		swap(nodes, i, right);
+		swap(nodes, indices, i, right);
 		return i;
 	}
 
@@ -234,15 +243,18 @@ public class NextNode {
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 	
-	// Swap node i and j in node array
-	private static void swap(double[] nodes, int i, int j) {
+	// Swap i and j in node and index array
+	private static void swap(double[] nodes, int[] indices, int i, int j) {
 		
-		i *= 2; j *= 2;
-		for (int k = 0; k < 2; k++) {
-			double t = nodes[i + k];
-			nodes[i + k] = nodes[j + k];
-			nodes[j + k] = t;
-		}
+	  double longitude = nodes[i * 2];
+	  nodes[i * 2] = nodes[j * 2];
+	  nodes[j * 2] = longitude;
+	  double latitude = nodes[i * 2 + 1];
+	  nodes[i * 2 + 1] = nodes[j * 2 + 1];
+	  nodes[j * 2 + 1] = latitude;
+	  int index = indices[i];
+	  indices[i] = indices[j];
+	  indices[j] = index;
 	}
 	
 	// Get property of node on given index

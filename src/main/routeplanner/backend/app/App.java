@@ -165,6 +165,7 @@ public class App {
 			throw new FatalFailure(Code.BAD_PARAMETER, "nodeID out of range");
 		}
 		
+		_dijkstra.reset();
 
 		logger.info(System.lineSeparator() + "Start calculation");
 
