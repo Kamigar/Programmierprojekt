@@ -48,6 +48,14 @@ public class Node {
 		_distance = distance;
 	}
 	
+	public Node previous() {
+		return _previous;
+	}
+	
+	public void setPrevious(Node previous) {
+		_previous = previous;
+	}
+	
 	
 	// ID
 	private int _id;
@@ -62,4 +70,7 @@ public class Node {
 	
 	// Shortest distance from start point
 	private int _distance;
+	
+	// Previous node on the shortest path from a given start point
+	private Node _previous;
 }
