@@ -65,9 +65,12 @@ public class FileScanner {
 		return i;
 	}
 	
-	// Jump over float (integer with optional decimal places)
+	// Jump over float (integer with optional decimal places and sign)
 	private static int skipFloat(String str, int startIndex) {
 		
+	  if (str.charAt(startIndex) == '-')
+	    startIndex++;
+	  
 		int i = skipInteger(str, startIndex);
 
 		if (i < str.length() && str.charAt(i) == '.') {
