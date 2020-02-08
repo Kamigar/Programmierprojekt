@@ -99,25 +99,28 @@ public class KDTreeVerification {
 
 		// Output time results
 
-		double nnfAvg = 0, nniAvg = 0;
+		double nnfSum = 0, nniSum = 0;
 
 		StringBuilder nnfMsg = new StringBuilder(System.lineSeparator() + "Calculation times NNF:");
 		StringBuilder nniMsg = new StringBuilder(System.lineSeparator() + "Calculation times NNI: ");
 
 		for (int i = 0; i < cnt; i++) {
 		  
-		  nnfAvg += (double)nnfTimes[i] / (cnt * 1000000);
-		  nniAvg += (double)nniTimes[i] / (cnt * 1000000);
+		  double nnfTime = (double)nnfTimes[i] / 1000000;
+		  double nniTime = (double)nniTimes[i] / 1000000;
+
+		  nnfSum += nnfTime;
+		  nniSum += nniTime;
 		  
-		  nnfMsg.append("  " + (double)nnfTimes[i] / 1000000 + " ms");
-		  nniMsg.append("  " + (double)nniTimes[i] / 1000000 + " ms");
+		  nnfMsg.append("  " + nnfTime + " ms");
+		  nniMsg.append("  " + nniTime + " ms");
 		}
 		
 		_logger.info(nnfMsg.toString());
-		_logger.info("Average: " + nnfAvg + " ms");
+		_logger.info("Average: " + nnfSum / cnt + " ms");
 		
 		_logger.info(nniMsg.toString());
-		_logger.info("Average: " + nniAvg + " ms");
+		_logger.info("Average: " + nniSum / cnt + " ms");
 	}
 	
 
