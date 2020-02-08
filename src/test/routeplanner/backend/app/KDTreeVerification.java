@@ -2,6 +2,7 @@ package routeplanner.backend.app;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -16,14 +17,20 @@ import routeplanner.backend.app.App.Parameters;
 import routeplanner.backend.model.Node;
 
 public class KDTreeVerification {
+  
+  private static final int DEFAULT_TEST_COUNT = 100;
+  private static final String DEFAULT_TEST_MAP = "/toy.fmi";
 	
 	@BeforeAll
 	public static void initialize() throws IOException, FatalFailure {
-		
+	  
 		Parameters param = new Parameters();
 
 		param.isTolerant = false;
-		param.structureIn = new BufferedReader(new InputStreamReader(KDTreeVerification.class.getResourceAsStream("/toy.fmi"), "UTF-8"));
+		
+		param.structureIn = new BufferedReader(new InputStreamReader(System.getProperty("map") == null
+		    ? KDTreeVerification.class.getResourceAsStream(DEFAULT_TEST_MAP)
+		    : new FileInputStream(System.getProperty("map"))));
 		
 		_logger = new Logger(Logger.Level.INFO, new BufferedWriter(new OutputStreamWriter(System.out, "UTF-8")));
 		
@@ -38,7 +45,7 @@ public class KDTreeVerification {
 	public void testRandomNodes() throws IOException {
 	  
 	  // Number of random nodes to check
-	  int cnt = 100;
+	  int cnt = System.getProperty("cnt") == null ? DEFAULT_TEST_COUNT : Integer.parseUnsignedInt(System.getProperty("cnt"));
 		
 		double[] bounds = _nextNode.minimumBoundingBox();
 		

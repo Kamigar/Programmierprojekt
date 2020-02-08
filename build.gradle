@@ -17,6 +17,7 @@ applicationName = 'routeplanner'
 applicationDefaultJvmArgs = ["-Xmx6g"]
 
 test {
+  systemProperties(System.getProperties())
   jvmArgs '-Xmx6g'
   useJUnitPlatform()
   failFast = true
