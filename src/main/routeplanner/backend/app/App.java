@@ -83,6 +83,9 @@ public class App {
 		public URL htmlDirectory = Parameters.class.getResource(Main.htmlDirPath);
 		public Logger.Level logLevel = null;
 		public boolean isTolerant = false;
+		public boolean printLocation = false;
+		public boolean printDistance = false;
+		public boolean printPath = false;
 	}
 	
 
@@ -162,6 +165,7 @@ public class App {
 			throw new FatalFailure(Code.BAD_PARAMETER, "nodeID out of range");
 		}
 		
+		_dijkstra.reset();
 
 		logger.info(System.lineSeparator() + "Start calculation");
 
@@ -184,8 +188,7 @@ public class App {
 			// Output result
 			for (Node node : _nodes) {
 				
-				param.requestOut.write("" + node.id() + " " + node.distance());
-				param.requestOut.newLine();
+				writeDijkstraResult(node, param);
 
 				logger.info("" + param.start + " -> " + node.id() + " : " + node.distance());
 			}		
@@ -224,9 +227,8 @@ public class App {
 				// Output result
 
 				Node dst = _nodes[trgId];
-
-				param.requestOut.write("" + dst.distance());
-				param.requestOut.newLine();
+				
+				writeDijkstraResult(dst, param);
 				
 				logger.info("" + param.start + " -> " + trgId + " : " + dst.distance() + System.lineSeparator());
 			}	
@@ -294,8 +296,7 @@ public class App {
 
 			Node dst = _nodes[request[1]];
 
-			param.requestOut.write("" + dst.distance());
-			param.requestOut.newLine();
+			writeDijkstraResult(dst, param);
 			
 			logger.info("" + request[0] + " -> " + request[1] + " : " + dst.distance() + System.lineSeparator());
 		}		
@@ -367,16 +368,58 @@ public class App {
 
 			// Output result
 			
-			param.requestOut.write("" + distance);
-			for (Node n : result)
-				param.requestOut.write(" " + n.id());
-			param.requestOut.newLine();
+			writeNextNodeResult(result, distance, param);
 
 			logger.info("Distance to ( " + req[1] + " , " + req[0] + " ) : " + distance);
 			for (Node n : result)
 				logger.info("  node: " + n.id() + " ( " + n.latitude() + " , " + n.longitude() + " )");
 			logger.info("");
 		}	
+	}
+	
+	// Write result of next node calculation to requestOut
+	private static void writeNextNodeResult(Node[] result, double distance, Parameters param) throws IOException {
+
+		param.requestOut.write("" + distance);
+
+		for (Node n : result) {
+			
+			param.requestOut.write(" ");
+			writeNode(n, param.requestOut, param.printLocation, false, false);
+		}
+		param.requestOut.write("\n");
+	}
+	
+	// Write result of Dijkstra calculation to requestOut
+	private static void writeDijkstraResult(Node node, Parameters param) throws IOException {
+		
+		param.requestOut.write("" + node.distance());
+
+		if (param.printLocation || param.printDistance || param.printPath) {
+			
+			param.requestOut.write(" ");
+			writeNode(node, param.requestOut, param.printLocation, param.printDistance, param.printPath);
+		}
+		param.requestOut.write("\n");	
+	}
+	
+	// Write node to the specified writer
+	private static void writeNode(Node node, BufferedWriter writer, boolean printLocation, boolean printDistance, boolean printPath) throws IOException {
+		
+		writer.write("" + node.id());
+		
+		if (printLocation)
+			writer.write(" " + node.latitude() + " " + node.longitude());
+		
+		if (printDistance)
+			writer.write(" " + node.distance());
+		
+		if (printPath && node.previous() != null) {
+
+			writer.write(" ");
+			writeNode(node.previous(), writer, printLocation, printDistance, printPath);
+			// Note: Tail recursion, so there should be no problem with long paths
+		}
 	}
 	
 
