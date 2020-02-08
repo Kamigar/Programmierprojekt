@@ -25,7 +25,7 @@ You can start one of these calculations or a web server which handles requests o
 -srv, --server                  Start HTTP web server
 
 
-OPTIONS:
+I/O STREAM OPTIONS:
 
 The program operates on 2 input (default: stdin) and 2 output (default: stdout) streams.
 
@@ -49,21 +49,39 @@ The program operates on 2 input (default: stdin) and 2 output (default: stdout) 
 						  [latitude] [longitude]
 
 -o, --output-file <file>        Output of the calculated distances or the next neighbors
-  [default: stdout]               Output format: --one-to-one, --one-to-many
-                                                 FOR EACH ROUTE:
-						   [cost]
-				  Output format: --one-to-all
-				                 FOR EACH ROUTE:
-						   [trgID] [cost]
-				  Output format: --next-node-iterative, --next-node-fast
-				                 FOR EACH NEAREST NEIGHBOR:
-						   [distance] [nodeID]
+  [default: stdout]             See: OUTPUT FORMAT OPTIONS
 
 -l, --log-file <file>           Log output of the program
   [default: stdout]               
 
 
-The web server receives/sends requests over HTTP on a specified port (default: 80).
+OUTPUT FORMAT OPTIONS:
+
+The output of a calculation looks like this:
+  Output format: --one-to-one, --one-to-all, --one-to-many
+                 FOR EACH ROUTE:
+	           [cost] [node]
+  Output format: --next-node-iterative, --next-node-fast
+                 FOR EACH NEAREST NEIGHBOR:
+	           [distance] [node]
+
+By default [node] is empty. You could change this with the following options.
+If any of these parameters is set, [node] has the format
+  [node] := [id] [latitude] [longitude] [distance] [node]...
+
+-pl, --print-location           Print [latitude] [longitude] of each [node]
+
+-pd, --print-distance           Only for: --one-to-one, --one-to-all, --one-to-many
+                                Print [distance] to target for each [node]
+
+-pp, --print-path               Only for: --one-to-one, --one-to-all, --one-to-many
+                                Print every [node] in the calculated path
+				Note: The order of the nodes is reversed: [trg] [node]... [src]
+
+
+SERVER OPTIONS:
+
+The web server receives/sends requests over HTTP on a specified port.
 Also all files in the HTML directory are served (with redirection from / to /index.html).
 
 -p, --port <port>               Port of the HTTP server
@@ -73,6 +91,8 @@ Also all files in the HTML directory are served (with redirection from / to /ind
   [default: {resources}/html]
 
 
+LOG OPTIONS:
+
 The log verbosity defaults to --warning (--quiet if --output-file is same as --log-file).
 
 -w, --warning                   Log warnings and errors
@@ -81,6 +101,8 @@ The log verbosity defaults to --warning (--quiet if --output-file is same as --l
 
 -v, --verbose                   Log additional information about the calculation process
 
+
+OTHER OPTIONS:
 
 By default the program terminates, if there is an error in the input file(s).
 
@@ -96,7 +118,7 @@ Interactive use:
     Only user input:
       routeplanner -oto -v -t
 
-    Graph structure from file, distance request from user:
+    Graph structure from file, request from user:
       routeplanner -nnf -v -t -i graph.fmi
 
 
