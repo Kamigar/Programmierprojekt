@@ -8,15 +8,24 @@ import routeplanner.backend.model.Node;
  */
 public class NextNode {
 	
-	// Get the calculated nearest nodes
+	// Get the calculated nearest nodes (in preallocated array)
+  public int getResult(Node[] result, Node[] nodes) {
+    
+    int stackSize = IntStack.size(_stack);
+    int end = Math.min(result.length, stackSize);
+    for (int i = 0; i < end; i++) {
+      
+      result[i] = nodes[IntStack.get(_stack, i)];
+    }
+    return stackSize;
+  }
+
+	// Get the calculated nearest nodes (allocate new array)
 	public Node[] getResult(Node[] nodes) {
 		
-		Node[] r = new Node[IntStack.size(_stack)];
-		for (int i = 0; i < r.length; i++) {
-			
-			r[i] = nodes[IntStack.get(_stack, i)];
-		}
-		return r;
+		Node[] result = new Node[IntStack.size(_stack)];
+		getResult(result, nodes);
+		return result;
 	}
 	
 	// Return the minimum bounding box of the graph
