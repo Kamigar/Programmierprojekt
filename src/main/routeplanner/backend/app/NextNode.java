@@ -8,26 +8,24 @@ import routeplanner.backend.model.Node;
  */
 public class NextNode {
 	
-	/*
-	 * Node of k-d tree
-	 */
-	private static class TreeNode {
-		
-		public double value;
+	// Get the calculated nearest nodes (in preallocated array)
+  public int getResult(Node[] result, Node[] nodes) {
+    
+    int stackSize = IntStack.size(_stack);
+    int end = Math.min(result.length, stackSize);
+    for (int i = 0; i < end; i++) {
+      
+      result[i] = nodes[IntStack.get(_stack, i)];
+    }
+    return stackSize;
+  }
 
-		public TreeNode right;
-		public TreeNode left;
-	}
-	
-	// Get the calculated nearest nodes
+	// Get the calculated nearest nodes (allocate new array)
 	public Node[] getResult(Node[] nodes) {
 		
-		Node[] r = new Node[IntStack.size(_stack)];
-		for (int i = 0; i < r.length; i++) {
-			
-			r[i] = nodes[IntStack.get(_stack, i)];
-		}
-		return r;
+		Node[] result = new Node[IntStack.size(_stack)];
+		getResult(result, nodes);
+		return result;
 	}
 	
 	// Return the minimum bounding box of the graph
@@ -65,55 +63,48 @@ public class NextNode {
 		
 		IntStack.clear(_stack);
 
-		return findNext(_stack, 0, _data, _root, longitude, latitude);
+		return findNext(_stack, 0, _data, _tree, 0, longitude, latitude);
 	}
 	
 	// Recursively search next node in (sub)tree
-	private static double findNext(int[] results, int property, double[] data, TreeNode tree, double current, double other) {
-		
-		if (tree.left == null) {
+	private static double findNext(int[] results, int property, double[] data, double[] tree, int treeIndex, double current, double other) {
+	  
+	  if (treeIndex * 2 + 1 >= tree.length) {
 			// Is leaf node
-			int index = (int)tree.value;
-			IntStack.push(results, index);
-			return distance(current, other, getProperty(property, data, index), getProperty(1 - property, data, index));
-		}
-		
-		if (tree.right == null) {
-			// Search in left subtree
-			return findNext(results, 1 - property, data, tree.left, other, current);
-		}
-		
+	    int index = (int)tree[treeIndex];
+	    IntStack.push(results, index);
+	    return distance(current, other, getProperty(property, data, index), getProperty(1 - property, data, index));
+	  }
+
 		// Decide whether to search first in left or right subtree
-		TreeNode nextChild, otherChild;
-		double threshold = tree.value - current;
-		if (threshold < 0) {
-			
-			threshold = -threshold;
-			
-			nextChild = tree.right;
-			otherChild = tree.left;
+	  int nextChild, otherChild;
+	  double threshold = tree[treeIndex] - current;
+	  if (threshold < 0) {
+	    
+	    threshold = -threshold;
+	    nextChild = treeIndex * 2 + 2;
+	    otherChild = treeIndex * 2 + 1;
 
-		} else {
-			
-			nextChild = tree.left;
-			otherChild = tree.right;
-		}
-
-
-		int stackSize = IntStack.size(results);
-
-		double distance = findNext(results, 1 - property, data, nextChild, other, current);
-		
-		if (distance >= threshold) {
-
+	  } else {
+	    
+	    nextChild = treeIndex * 2 + 1;
+	    otherChild = treeIndex * 2 + 2;
+	  }
+	  
+	  int stackSize = IntStack.size(results);
+	  
+	  double distance = findNext(results, 1 - property, data, tree, nextChild, other, current);
+	  
+	  if (distance >= threshold) {
+	    
 			// Next node possibly in other subtree
 
-			int newSize = IntStack.size(results);
+	    int newSize = IntStack.size(results);
 
-			double e = findNext(results, 1 - property, data, otherChild, other, current);
-			
-			if (e <= distance) {
-				
+	    double e = findNext(results, 1 - property, data, tree, otherChild, other, current);
+	    
+	    if (e <= distance) {
+	      
 				if (e != distance) {
 
 					// Remove old results from stack
@@ -157,7 +148,8 @@ public class NextNode {
 		}
 
 		// Create k-d tree
-		_root = createTree(0, _data, indices, 0, nodes.length - 1);
+		_tree = new double[nodes.length * 2 - 1];
+		createTree(_tree, 0, 0, _data, indices, 0, nodes.length - 1);
 		
 		// Create result stack
 		_stack = IntStack.create(nodes.length);
@@ -170,33 +162,31 @@ public class NextNode {
 	}
 	
 	// Create k-d (sub)tree recursively
-	private static TreeNode createTree(int property, double[] nodes, int[] indices, int left, int right) {
-		
-		if (left >= right) {
-			
-			if (left != right)
-				return null;
-
-			// Create leaf
-			TreeNode t = new TreeNode();
-			t.value = indices[left];
-			return t;	
-		}
-		
-		// Expected position of pivot element
-		int pos = (right - left) / 2;
-
-		TreeNode t = new TreeNode();
-		
+	private static void createTree(double[] tree, int treeIndex, int property, double[] nodes, int[] indices, int left, int right) {
+	  
+	  if (left >= right) {
+	    
+	    if (left != right)
+	      return;
+	    
+	    // Create leaf
+	    tree[treeIndex] = indices[left];
+	    return;
+	  }
+	  
+	  // Calculate pivot position
+	  int size = right - left + 1;
+	  int full = maxFullTree(size);
+	  int pos = full / 2 + Math.min(size - full, full / 2) - 1;
+	  
 		// Find median (element on position 'pos')
-		t.value = getPosition(property, nodes, indices, left, right, pos);
-		
+	  tree[treeIndex] = getPosition(property, nodes, indices, left, right, pos);
+	  
 		// Create subtrees
-		t.left = createTree(1 - property, nodes, indices, left, left + pos);
-		t.right = createTree(1 - property, nodes, indices, left + pos + 1, right);
-		
-		return t;
+	  createTree(tree, treeIndex * 2 + 1, 1 - property, nodes, indices, left, left + pos);
+	  createTree(tree, treeIndex * 2 + 2, 1 - property, nodes, indices, left + pos + 1, right);
 	}
+	
 	
 	// Find 'pos'-th smallest element (position 'pos' in sorted array)
 	private static double getPosition(int property, double[] nodes, int[] indices, int left, int right, int pos) {
@@ -233,6 +223,16 @@ public class NextNode {
 		return i;
 	}
 
+	// Calculate 2^floor(log2(value)) without rounding errors
+	private static int maxFullTree(int value) {
+	  
+	  int r = 1;
+
+	  while (r <= value)
+	    r *= 2;
+
+	  return r / 2;
+	}
 
 	// Calculate Euclidean distance between two points
 	private static double distance(double ax, double ay, double bx, double by) {
@@ -263,9 +263,9 @@ public class NextNode {
 		return data[index * 2 + property];
 	}
 	
-	
-	// Root of the k-d tree
-	private TreeNode _root;
+
+	// k-d tree data structure
+	public double[] _tree;
 	
 	// Structure to store nodes with their longitude & latitude
 	private double[] _data;

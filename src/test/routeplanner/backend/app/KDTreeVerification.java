@@ -20,6 +20,7 @@ public class KDTreeVerification {
   
   private static final int DEFAULT_TEST_COUNT = 100;
   private static final String DEFAULT_TEST_MAP = "/toy.fmi";
+  private static final int MAX_RESULTS = 100;
 	
 	@BeforeAll
 	public static void initialize() throws IOException, FatalFailure {
@@ -39,6 +40,9 @@ public class KDTreeVerification {
 		
 		_nextNode = new NextNode();
 		_nextNode.prepare(_nodes);
+		
+		_nnfResults = new Node[MAX_RESULTS];
+		_nniResults = new Node[MAX_RESULTS];
 	}
 
 	@Test
@@ -70,8 +74,8 @@ public class KDTreeVerification {
 			
 			nnfTimes[i] = endTime - startTime;
 
-			Node[] rf = _nextNode.getResult(_nodes);
-			
+			int nnfcnt = _nextNode.getResult(_nnfResults, _nodes);
+
 
 			// Calculate iteratively
 			
@@ -83,17 +87,24 @@ public class KDTreeVerification {
 			
 			nniTimes[i] = endTime - startTime;
 			
-			Node[] ri = _nextNode.getResult(_nodes);
+			int nnicnt = _nextNode.getResult(_nniResults, _nodes);
 			
 			
 			// Assert results
 			
-			assertEquals(df, di);
+			assertEquals(di, df);
 
-			assertEquals(rf.length, ri.length);
+			assertEquals(nnicnt, nnfcnt);
 			
-			for (int j = 0; j < rf.length; j++)
-				assertEquals(rf[j].id(), ri[j].id());
+			if (nnicnt > MAX_RESULTS) {
+			  
+			  _logger.warning("Too much nodes with the same distance");
+
+			} else {
+			  
+			  for (int j = 0; j < nnicnt; j++)
+			    assertEquals(_nniResults[j], _nnfResults[j]);
+			}
 		}
 		
 
@@ -127,6 +138,9 @@ public class KDTreeVerification {
 	private static NextNode _nextNode;
 	
 	private static Node[] _nodes;
-	
+
+	private static Node[] _nnfResults;
+	private static Node[] _nniResults;
+
 	private static Logger _logger;
 }
