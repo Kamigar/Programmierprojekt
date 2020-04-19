@@ -1,6 +1,7 @@
 package routeplanner.backend.app;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -22,6 +23,58 @@ import routeplanner.backend.app.App.Parameters;
  * Simple HTTP server
  */
 public class Server {
+  
+  // File MIME types
+	static final String defaultMimeType = "text/plain";
+	static final Map<String, String> mimeTypes = Map.ofEntries(
+	  Map.entry("html", "text/html"),
+	  Map.entry("js", "text/javascript"),
+	  Map.entry("css", "text/css"));
+	
+	// MIME type of Dijkstra and next node response
+	static final String responseMimeType = "text/plain";
+
+
+	/*
+	 * File in the HTML directory
+	 */
+  public static class HttpFile {
+    
+    HttpFile(String path, byte[] data) {
+      
+      _path = path;
+      _data = data;
+
+      // Get MIME type by extension
+
+      int p = path.lastIndexOf('.');
+      int s = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+      String ext = p <= s ? "" : path.substring(p + 1);
+
+      String type = mimeTypes.get(ext);
+      
+      _type = type == null ? defaultMimeType : type;
+    }
+
+    // Path to serve
+    public String path() {
+      return _path;
+    }
+
+    // Mime type
+    public String type() {
+      return _type;
+    }
+
+    // File content
+    public byte[] data() {
+      return _data;
+    }
+    
+    private String _path;
+    private String _type;
+    private byte[] _data;
+  };
 	
 	/*
 	 * Handler for Dijkstra and next node calculation
@@ -132,15 +185,14 @@ public class Server {
 				}
 				
 				
-				// Send HTTP response
+				// Set HTTP response
 
 				param.requestOut.flush();
-
+				
+				t.getResponseHeaders().add("Content-Type", responseMimeType);
 				t.sendResponseHeaders(200, out.size());
 
 				out.writeTo(t.getResponseBody());
-
-				t.getResponseBody().close();
 
 			} catch (FatalFailure ex) {
 				
@@ -148,8 +200,10 @@ public class Server {
 
 				t.sendResponseHeaders(400, msg.length);
 				t.getResponseBody().write(msg);
-				t.getResponseBody().close();
 			}
+			
+			// Close/send response
+			t.close();
 		}
 	}
 	
@@ -168,20 +222,19 @@ public class Server {
 			if (redirection != null) {
 				
 				t.getResponseHeaders().add("Location", redirection);
-				t.sendResponseHeaders(302, 0);
-				t.getResponseBody().close();
+				t.sendResponseHeaders(302, -1);
 
 			} else {
 
 				// Check if file could be served
 				
-				byte[] data = _html.get(t.getRequestURI().getPath());
+				HttpFile file = _html.get(t.getRequestURI().getPath());
 				
-				if (data != null) {
+				if (file != null) {
 				
-					t.sendResponseHeaders(200, data.length);
-					t.getResponseBody().write(data);
-					t.getResponseBody().close();
+				  t.getResponseHeaders().add("Content-Type", file.type());
+					t.sendResponseHeaders(200, file.data().length);
+					t.getResponseBody().write(file.data());
 
 				} else {
 					
@@ -189,15 +242,17 @@ public class Server {
 					
 					t.sendResponseHeaders(404, msg.length);
 					t.getResponseBody().write(msg);
-					t.getResponseBody().close();
 				}	
 			}
+
+			// Close/send response
+			t.close();
 		}
 	}
 	
 	
 	// Start the server instance
-	public void start(int port, int backlog, String routeplannerPath, HashMap<String, byte[]> html, HashMap<String, String> redirections, App app, Logger logger) throws IOException {
+	public void start(int port, int backlog, String routeplannerPath, HashMap<String, HttpFile> html, HashMap<String, String> redirections, App app, Logger logger) throws IOException {
 		
 		logger.info("Broadcasting files:");
 		for (String path : html.keySet())
@@ -226,7 +281,7 @@ public class Server {
 	private HttpServer _server;
 	
 	// Files to serve (URI-path -> data)
-	private HashMap<String, byte[]> _html;
+	private HashMap<String, HttpFile> _html;
 	
 	// Redirections (URI-path -> URI-path)
 	private HashMap<String, String> _redirections;

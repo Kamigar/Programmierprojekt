@@ -49,14 +49,12 @@ function back() {
       destination.route.remove();
     }
     
-    document.getElementById("from-button").disabled = true;
-    document.getElementById("to-button").disabled = true;
+    document.getElementById("left-button").disabled = true;
+    document.getElementById("left-button").innerHTML = "From";
+    document.getElementById("right-button").disabled = true;
+    document.getElementById("right-button").innerHTML = "To";
     
     document.getElementById("other-node").classList.add("hidden");
-    document.getElementById("cancel-button").classList.add("hidden");
-    document.getElementById("start-button").classList.add("hidden");
-    document.getElementById("from-button").classList.remove("hidden");
-    document.getElementById("to-button").classList.remove("hidden");
     
     clearSelectedNode();
     
@@ -77,6 +75,7 @@ function back() {
     // Show/hide ui elements
     document.getElementById("sidebar-select-node").classList.remove("hidden");
     document.getElementById("sidebar-show-route").classList.add("hidden");
+    document.getElementById("right-button").classList.remove("hidden");
     
     // Clear start/destination
     if (start == selectedNode)
@@ -87,38 +86,55 @@ function back() {
     state = STATE_SELECTSECOND;
     break;
   }
-
 }
 
-// Process user click on 'FROM' button
-function fromButtonClicked() {
+// Process user click on left button
+function leftButtonClicked() {
   
-  start = selectedNode;
+  switch (state) {
   
-  document.getElementById("other-title").innerHTML = "Starting point"
-  
-  selectSecond();
-}
+  case STATE_SELECTFIRST:
 
-// Process user click on 'TO' button
-function toButtonClicked() {
-  
-  destination = selectedNode;
-  
-  document.getElementById("other-title").innerHTML = "Destination";
-  
-  selectSecond();
-}
-
-// Process user click on 'START' button
-function startButtonClicked() {
-  
-  if (start == null)
+    // Left is 'From' button
     start = selectedNode;
-  if (destination == null)
-    destination = selectedNode;
+    document.getElementById("other-title").innerHTML = "Starting point";
+    selectSecond();
+    break;
+
+  default:
+
+    // Left is 'Back' button
+    back();
+    break;
+  }
+}
+
+// Process user click on right button
+function rightButtonClicked() {
   
-  calculateDijkstra();
+  switch (state) {
+  
+  case STATE_SELECTFIRST:
+
+    // Right is 'To' button
+    destination = selectedNode;
+    document.getElementById("other-title").innerHTML = "Destination";
+    selectSecond();
+    break;
+    
+  case STATE_SELECTSECOND:
+
+    // Right is 'Start' button
+    if (start == null)
+      start = selectedNode;
+    if (destination == null)
+      destination = selectedNode;
+    
+    document.getElementById("right-button").classList.add("hidden");
+    
+    calculateDijkstra();
+    break;
+  }
 }
 
 // Switch to selection of second node
@@ -140,12 +156,10 @@ function selectSecond() {
   document.getElementById("other-longitude").innerHTML = selectedNode.longitude;
   
   // Enable/disable ui elements
-  document.getElementById("start-button").disabled = true;
+  document.getElementById("right-button").disabled = true;
+  document.getElementById("right-button").innerHTML = "Start";
+  document.getElementById("left-button").innerHTML = "Back";
   document.getElementById("other-node").classList.remove("hidden");
-  document.getElementById("cancel-button").classList.remove("hidden");
-  document.getElementById("start-button").classList.remove("hidden");
-  document.getElementById("from-button").classList.add("hidden");
-  document.getElementById("to-button").classList.add("hidden");
   
   clearSelectedNode();
 }

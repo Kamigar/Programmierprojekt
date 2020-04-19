@@ -296,6 +296,7 @@ public class Main {
 
 				InputStream reader = Main.class.getResourceAsStream(helpFilePath);
 				byte[] data = reader.readAllBytes();
+				reader.close();
 				
 				System.out.print(new String(data, utf8));
 
@@ -376,9 +377,9 @@ public class Main {
 	}
 	
 	// Return HashMap (filename -> data) of files in directory 'url'
-	private static HashMap<String, byte[]> getHtmlData(URL url, Logger logger) throws IOException, FatalFailure {
+	private static HashMap<String, Server.HttpFile> getHtmlData(URL url, Logger logger) throws IOException, FatalFailure {
 		
-		HashMap<String, byte[]> res = new HashMap<String, byte[]>();
+		HashMap<String, Server.HttpFile> res = new HashMap<String, Server.HttpFile>();
 		
 		if (url.getProtocol().contentEquals("jar")) {
 			
@@ -395,9 +396,15 @@ public class Main {
 				// Ignore files outside 'resourceFolder' and directories
 				if (file.startsWith(resourceFolder) && file.lastIndexOf("/") < file.length() - 1) {
 					
-					InputStream s = Main.class.getResourceAsStream("/" + file);
-					res.put(file.substring(resourceFolder.length(), file.length()), s.readAllBytes());
-					s.close();
+				  InputStream stream = Main.class.getResourceAsStream("/" + file);
+
+          Server.HttpFile http = new Server.HttpFile(
+            file.substring(resourceFolder.length(), file.length()),
+            stream.readAllBytes());
+          
+          stream.close();
+
+          res.put(http.path(), http);
 				}
 			}
 			jar.close();
@@ -412,10 +419,16 @@ public class Main {
 					.forEach(x -> files.add(x.toString()));
 
 			for (String file : files) {
-				
-				FileInputStream s = new FileInputStream(file);
-				res.put(file.substring(url.getPath().length(), file.length()), s.readAllBytes());
-				s.close();
+			  
+			  FileInputStream stream = new FileInputStream(file);
+
+			  Server.HttpFile http = new Server.HttpFile(
+			    file.substring(url.getPath().length(), file.length()),
+			    stream.readAllBytes());
+			  
+			  stream.close();
+			  
+			  res.put(http.path(), http);
 			}
 
 		} else {
@@ -547,7 +560,7 @@ public class Main {
 				Server server = new Server();
 
 				// Read HTML files
-				HashMap<String, byte[]> html = getHtmlData(param.htmlDirectory, logger);
+				HashMap<String, Server.HttpFile> html = getHtmlData(param.htmlDirectory, logger);
 
 				HashMap<String, String> redirections = new HashMap<String, String>();
 				redirections.put("/", serverRootRedirection);

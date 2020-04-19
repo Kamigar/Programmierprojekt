@@ -382,11 +382,9 @@ public class App {
 
 		param.requestOut.write("" + distance);
 
-		for (Node n : result) {
-			
-			param.requestOut.write(" ");
+		for (Node n : result)
 			writeNode(n, param.requestOut, param.printLocation, false, false);
-		}
+
 		param.requestOut.write("\n");
 	}
 	
@@ -395,30 +393,26 @@ public class App {
 		
 		param.requestOut.write("" + node.distance());
 
-		if (param.printLocation || param.printDistance || param.printPath) {
-			
-			param.requestOut.write(" ");
+		if (param.printLocation || param.printDistance || param.printPath)
 			writeNode(node, param.requestOut, param.printLocation, param.printDistance, param.printPath);
-		}
+
 		param.requestOut.write("\n");	
 	}
 	
 	// Write node to the specified writer
 	private static void writeNode(Node node, BufferedWriter writer, boolean printLocation, boolean printDistance, boolean printPath) throws IOException {
 		
-		writer.write("" + node.id());
-		
-		if (printLocation)
-			writer.write(" " + node.latitude() + " " + node.longitude());
-		
-		if (printDistance)
-			writer.write(" " + node.distance());
-		
-		if (printPath && node.previous() != null) {
+		while (node != null) {
 
-			writer.write(" ");
-			writeNode(node.previous(), writer, printLocation, printDistance, printPath);
-			// Note: Tail recursion, so there should be no problem with long paths
+			writer.write(" " + node.id());
+			
+			if (printLocation)
+				writer.write(" " + node.latitude() + " " + node.longitude());
+			
+			if (printDistance)
+				writer.write(" " + node.distance());
+			
+			node = printPath ? node.previous() : null;
 		}
 	}
 	

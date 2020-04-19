@@ -68,13 +68,13 @@ function onPopupOpen(node, distance) {
   
   case STATE_SELECTFIRST:
     
-    document.getElementById("from-button").disabled = false;
-    document.getElementById("to-button").disabled = false;
+    document.getElementById("left-button").disabled = false;
+    document.getElementById("right-button").disabled = false;
     break;
     
   case STATE_SELECTSECOND:
     
-    document.getElementById("start-button").disabled = false;
+    document.getElementById("right-button").disabled = false;
     break;
   }
   
