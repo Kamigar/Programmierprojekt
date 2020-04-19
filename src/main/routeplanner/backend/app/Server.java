@@ -185,7 +185,7 @@ public class Server {
 				}
 				
 				
-				// Send HTTP response
+				// Set HTTP response
 
 				param.requestOut.flush();
 				
@@ -194,16 +194,16 @@ public class Server {
 
 				out.writeTo(t.getResponseBody());
 
-				t.getResponseBody().close();
-
 			} catch (FatalFailure ex) {
 				
 				byte[] msg = ("Error in request\n\n" + ex.getMessage() + "\n\n").getBytes();
 
 				t.sendResponseHeaders(400, msg.length);
 				t.getResponseBody().write(msg);
-				t.getResponseBody().close();
 			}
+			
+			// Close/send response
+			t.close();
 		}
 	}
 	
@@ -222,8 +222,7 @@ public class Server {
 			if (redirection != null) {
 				
 				t.getResponseHeaders().add("Location", redirection);
-				t.sendResponseHeaders(302, 0);
-				t.getResponseBody().close();
+				t.sendResponseHeaders(302, -1);
 
 			} else {
 
@@ -236,7 +235,6 @@ public class Server {
 				  t.getResponseHeaders().add("Content-Type", file.type());
 					t.sendResponseHeaders(200, file.data().length);
 					t.getResponseBody().write(file.data());
-					t.getResponseBody().close();
 
 				} else {
 					
@@ -244,9 +242,11 @@ public class Server {
 					
 					t.sendResponseHeaders(404, msg.length);
 					t.getResponseBody().write(msg);
-					t.getResponseBody().close();
 				}	
 			}
+
+			// Close/send response
+			t.close();
 		}
 	}
 	
