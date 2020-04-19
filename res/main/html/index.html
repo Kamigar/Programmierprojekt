@@ -52,15 +52,6 @@
           </tr>
         </table>
 
-        <button id="from-button" type="button"
-          onclick="fromButtonClicked()" disabled>FROM</button>
-        <button id="to-button" type="button"
-          onclick="toButtonClicked()" disabled>TO</button>
-        <button id="cancel-button" type="button"
-          onclick="back()" class="hidden">CANCEL</button>
-        <button id="start-button" type="button"
-          onclick="startButtonClicked()" class="hidden" disabled>START</button>
-
         <div id="other-node" class="hidden">
           <h1 id="other-title">You should not see this!</h1>
           <table>
@@ -97,6 +88,11 @@
           </tr>
         </table>
       </div>
+      
+      <button id="left-button" type="button"
+        onclick="leftButtonClicked()" disabled>From</button>
+      <button id="right-button" type="button"
+        onclick="rightButtonClicked()" disabled>To</button>
 
     </div>
   </div>
@@ -105,16 +101,11 @@
 
 </body>
 
-<link rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
-  integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
-  crossorigin=""></link>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"></link>
 
 <link rel="stylesheet" href="style.css"></link>
 
-<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
-  integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
-  crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
 
 <script src="control.js"></script>
 <script src="map.js"></script>
