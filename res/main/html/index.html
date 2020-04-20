@@ -1,13 +1,26 @@
 <!DOCTYPE HTML>
 <html>
-<head>
+<title>Routeplanner</title>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-</head>
 <body>
   <div id="container">
     <div id="map"></div>
     <div id="sidebar-container">
+    
+      <div id="search-container">
+        <input id="node-input" type="text" placeholder="Node ID" />
+        <button id="search-button" type="button"
+          onclick="searchButtonClicked()"><i class="fa fa-search"></i></button>
+      </div>
+
+      <div id="button-container">
+        <button id="left-button" type="button"
+          onclick="leftButtonClicked()" disabled>From</button>
+        <button id="right-button" type="button"
+          onclick="rightButtonClicked()" disabled>To</button>
+      </div>
+
       <div id="sidebar-select-node">
         <h1>Selected point</h1>
         <table>
@@ -89,11 +102,6 @@
         </table>
       </div>
       
-      <button id="left-button" type="button"
-        onclick="leftButtonClicked()" disabled>From</button>
-      <button id="right-button" type="button"
-        onclick="rightButtonClicked()" disabled>To</button>
-
     </div>
   </div>
 
@@ -102,6 +110,7 @@
 </body>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"></link>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"></link>
 
 <link rel="stylesheet" href="style.css"></link>
 

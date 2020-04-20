@@ -74,7 +74,7 @@ public class Server {
     private String _path;
     private String _type;
     private byte[] _data;
-  };
+  }
 	
 	/*
 	 * Handler for Dijkstra and next node calculation
@@ -103,6 +103,11 @@ public class Server {
 				for (String option : options) {
 					
 					switch (option) {
+					
+					case "nbi":
+					  
+					  param.mode = Mode.NBI;
+					  break;
 					
 					case "oto":
 						
@@ -152,7 +157,7 @@ public class Server {
 
 						} catch (NumberFormatException ex) {
 							
-							throw new FatalFailure(Code.BAD_REQUEST, "Unknown operation");
+							throw new FatalFailure(Code.BAD_REQUEST, "Bad integer provided");
 						}
 					}
 				}
@@ -161,6 +166,11 @@ public class Server {
 				// Run calculation
 				
 				switch (param.mode) {
+				
+				case NBI:
+				  
+				  _app.findNode(param, _logger);
+				  break;
 				
 				case OTO:
 					

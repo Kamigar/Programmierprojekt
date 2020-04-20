@@ -165,6 +165,21 @@ public class Main {
 				logOut = args[i];
 				break;
 				
+			case "--node-by-id":
+			case "-nbi":
+			  
+			  i++;
+			  if (args.length == i)
+			    throw new BadParameterException("No ID for node-by-id provided");
+			  
+			  try {
+			    p.start = Integer.parseUnsignedInt(args[i]);
+			  } catch (NumberFormatException ex) {
+			    throw new BadParameterException("Bad ID for node-by-id provided");
+			  }
+			  p.mode = Mode.NBI;
+			  break;
+				
 			case "--one-to-one":
 			case "-oto":
 				
@@ -489,6 +504,9 @@ public class Main {
 			
 			switch (param.mode) {
 			
+			case NBI:
+			  break;
+			
 			case OTO:
 			case OTA:
 			case OTM:
@@ -522,6 +540,11 @@ public class Main {
 			// Run calculation(s)
 
 			switch (param.mode) {
+			
+			case NBI:
+			  
+			  app.findNode(param, logger);
+			  break;
 			
 			case OTO:
 				

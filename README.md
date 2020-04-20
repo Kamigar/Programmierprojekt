@@ -40,6 +40,7 @@ The program is able to calculate shortest paths and nearest neighbors. You can s
 
 OPERATION | Explanation
 -|-
+`-nbi, --node-by-id <nodeID>` | Find node information by ID
 `-oto, --one-to-one` | Calculate distances between points
 `-ota, --one-to-all <srcID>` | Calculate all distances from start point `<srcID>`
 `-otm, --one-to-many <srcID>` | Calculate distances from start point `<srcID>`
@@ -62,7 +63,7 @@ OPTION | Explanation
 
 ### <a name="output-format-options"></a>Output format options
 
-The output of a calculation looks like this:<br>**--one-to-one, --one-to-all, --one-to-many**<br>`FOR EACH ROUTE:`<br>&nbsp;&nbsp;`[cost] [node]`<br>**--next-node-iterative, --next-node-fast**<br>`FOR EACH NEAREST NEIGHBOR:`<br>&nbsp;&nbsp;`[distance] [node]`
+The output of a calculation looks like this:<br>**--node-by-id**<br>`[success] [node]`<br>**--one-to-one, --one-to-all, --one-to-many**<br>`FOR EACH ROUTE:`<br>&nbsp;&nbsp;`[cost] [node]`<br>**--next-node-iterative, --next-node-fast**<br>`FOR EACH NEAREST NEIGHBOR:`<br>&nbsp;&nbsp;`[distance] [node]`
 
 By default `[node]` is empty. You could change this with the followig options. If any of these parameters is set, `[node]` has the format `[node] := [id] [latitude] [longitude] [distance] [node]...`
 

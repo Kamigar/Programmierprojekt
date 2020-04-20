@@ -1,8 +1,40 @@
 
+// Get node by ID
+function findNode(id) {
+  
+  showShortLoadingScreen();
+  
+  // Send HTTP request to server
+  var request = new XMLHttpRequest();
+  
+  request.onload = function() {
+
+    if (request.status == 200) {
+
+      onLoadFindNode(request.response);
+
+    } else {
+
+      alert("Bad reply from server:\n" + request.response);
+      location.reload();
+    }
+  };
+  
+  request.ontimeout = function() {
+    
+    alert("A timeout occured... Please try again");
+    location.reload();
+  };
+  
+  request.timeout = 10000;
+  request.open("POST", "routeplanner?nbi&pl&" + id);
+  request.send();
+}
+
 // Calculate nearest neighbor
 function calculateNextNode(longitude, latitude) {
   
-  showNextNodeLoadingScreen();
+  showShortLoadingScreen();
   
   var marker = showStart(longitude, latitude);
   
@@ -18,7 +50,7 @@ function calculateNextNode(longitude, latitude) {
 
     } else {
 
-      alert("Bad reply from server: " + request.response);
+      alert("Bad reply from server:\n" + request.response);
       location.reload();
     }
   }
@@ -37,7 +69,7 @@ function calculateNextNode(longitude, latitude) {
 // Calculate shortest route (Dijkstra)
 function calculateDijkstra() {
   
-  showDijkstraLoadingScreen();
+  showLongLoadingScreen();
   state = STATE_SHOWROUTE;
 
   // Prepare request
@@ -54,7 +86,7 @@ function calculateDijkstra() {
 
     } else {
 
-      alert("Bad reply from server: " + request.response);
+      alert("Bad reply from server:\n" + request.response);
       location.reload();
     }
   }
@@ -68,6 +100,19 @@ function calculateDijkstra() {
   request.timeout = 30000;
   request.open("POST", "routeplanner?oto&pl&pd&pp");
   request.send(text);
+}
+
+// Process result of node search
+function onLoadFindNode(response) {
+  
+  var result = parseFindNode(response);
+  
+  if (result.success)
+    showNode(result);
+  else
+    alert("Node not found");
+
+  hideLoadingScreen();
 }
 
 // Process result of nearest neighbor calculation
@@ -89,6 +134,28 @@ function onLoadDijkstra(response) {
   showRoute(route);
   
   hideLoadingScreen();
+}
+
+// Parse node search response message
+function parseFindNode(string) {
+  
+  var values = string.split(" ");
+  
+  var result = {};
+
+  var success = parseInt(values[0]);
+  if (success == 0) {
+    
+    result.success = false;
+    
+  } else {
+    
+    result.success = true;
+    result.id = parseInt(values[1]);
+    result.latitude = parseFloat(values[2]);
+    result.longitude = parseFloat(values[3]);
+  }
+  return result;
 }
 
 // Parse nearest neighbor response message
@@ -136,8 +203,8 @@ function parseDijkstra(string) {
   return result;
 }
 
-// Show next node loading screen
-function showNextNodeLoadingScreen() {
+// Show short loading screen (only disable input)
+function showShortLoadingScreen() {
   
   var screen = document.getElementById("loading-screen");
   
@@ -148,8 +215,8 @@ function showNextNodeLoadingScreen() {
   screen.classList.remove("hidden");
 }
 
-// Show Dijkstra loading screen
-function showDijkstraLoadingScreen() {
+// Show long loading screen (gray out everything)
+function showLongLoadingScreen() {
   
   var screen = document.getElementById("loading-screen");
   

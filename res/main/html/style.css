@@ -3,6 +3,31 @@ html, body {
   height: 100%;
   padding: 0;
   margin: 0;
+  font-family: courier, monospace;
+  font-size: large;
+}
+
+button {
+  font-family: arial, sans-serif;
+  font-size: large;
+  font-weight: bold;
+}
+
+input {
+  font-family: courier, monospace;
+  font-size: large;
+}
+
+h1 {
+  font-family: arial, sans-serif;
+  font-size: xx-large;
+  font-weight: lighter;
+}
+
+h2 {
+  font-family: inherit;
+  font-size: x-large;
+  font-weight: lighter;
 }
 
 #container {
@@ -16,7 +41,7 @@ html, body {
 }
 
 #sidebar-container {
-  flex: 0 0 20em;
+  flex: 0 0 18em;
   overflow-y: auto;
   color: #ffffff;
   background-color: #202020;
@@ -26,17 +51,8 @@ html, body {
   margin: 1em;
 }
 
-#sidebar-select-node h1 {
-  margin-top: 2em;
-  font-family: arial, sans-serif;
-  font-size: x-large;
-  font-weight: lighter;
-}
-
 #sidebar-select-node table {
   margin-bottom: 0.5em;
-  font-family: courier, monospace;
-  font-size: large;
   text-align: left;
 }
 
@@ -48,27 +64,20 @@ html, body {
   font-weight: lighter;
 }
 
+#search-container {
+  display: flex;
+  width: 100%;
+}
+
+#button-container {
+  display: flex;
+  width: 100%;
+}
+
 #sidebar-container button {
-  position: fixed;
-  width: 7em;
-  height: 3em;
-  margin-left: 0.5em;
-  font-family: courier, monospace;
-  font-size: large;
-  font-weight: normal;
   color: #ffffff;
   background-color: #202020;
   border: 1px solid #ffffff;
-}
-
-#left-button {
-  right: 8.5em;
-  bottom: 1em;
-}
-
-#right-button {
-  right: 1em;
-  bottom: 1em;
 }
 
 #sidebar-container button:hover {
@@ -83,20 +92,28 @@ html, body {
   background-color: inherit;
 }
 
-#sidebar-show-route h1 {
-  font-family: arial, sans-serif;
-  font-size: x-large;
-  font-weight: lighter;
+#search-container input {
+  flex: 1 1 0;
+  margin: 0.5em;
+  padding-left: 0.5em;
+  color: #ffffff;
+  background-color: #202020;
+  border: 1px solid #ffffff;
 }
 
-#sidebar-show-route h2 {
-  font-family: courier, monospace;
-  font-size: large;
+#search-container button {
+  flex: 0 0 2em;
+  height: 2em;
+  margin: 0.5em 0.5em 0.5em 0;
+}
+
+#button-container button {
+  flex: 1 1 0;
+  height: 3em;
+  margin: 0.5em;
 }
 
 #sidebar-show-route table {
-  font-family: courier, monospace;
-  font-size: large;
   text-align: left;
   width: 100%;
   border-collapse: collapse;
@@ -150,6 +167,10 @@ html, body {
 #loading-screen.dijkstra {
   background-color: #000000;
   opacity: 0.5;
+}
+
+.invisible {
+  visibility: hidden;
 }
 
 .hidden {

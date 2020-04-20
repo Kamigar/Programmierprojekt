@@ -40,13 +40,17 @@ function back() {
     
     if (start != null) {
       start.marker.remove();
-      start.start.marker.remove();
-      start.route.remove();
+      if (start.start != null) {
+        start.start.marker.remove();
+        start.route.remove();
+      }
     }
     if (destination != null) {
       destination.marker.remove();
-      destination.start.marker.remove();
-      destination.route.remove();
+      if (destination.start != null) {
+        destination.start.marker.remove();
+        destination.route.remove();
+      }
     }
     
     document.getElementById("left-button").disabled = true;
@@ -75,7 +79,8 @@ function back() {
     // Show/hide ui elements
     document.getElementById("sidebar-select-node").classList.remove("hidden");
     document.getElementById("sidebar-show-route").classList.add("hidden");
-    document.getElementById("right-button").classList.remove("hidden");
+    document.getElementById("right-button").classList.remove("invisible");
+    document.getElementById("search-container").classList.remove("hidden");
     
     // Clear start/destination
     if (start == selectedNode)
@@ -86,6 +91,17 @@ function back() {
     state = STATE_SELECTSECOND;
     break;
   }
+}
+
+// Process user click on search button
+function searchButtonClicked() {
+  
+  var id = parseInt(document.getElementById("node-input").value);
+  
+  if (!isNaN(id))
+    findNode(id);
+  else
+    alert("Please enter a valid node ID");
 }
 
 // Process user click on left button
@@ -130,8 +146,6 @@ function rightButtonClicked() {
     if (destination == null)
       destination = selectedNode;
     
-    document.getElementById("right-button").classList.add("hidden");
-    
     calculateDijkstra();
     break;
   }
@@ -147,8 +161,10 @@ function selectSecond() {
   
   // Remove markers and route from neighbor storage
   neighborMarkers.splice(neighborMarkers.indexOf(selectedNode.marker));
-  neighborMarkers.splice(neighborMarkers.indexOf(selectedNode.start.marker));
-  neighborRoutes.splice(neighborRoutes.indexOf(selectedNode.route));
+  if (selectedNode.start != null) {
+    neighborMarkers.splice(neighborMarkers.indexOf(selectedNode.start.marker));
+    neighborRoutes.splice(neighborRoutes.indexOf(selectedNode.route));
+  }
   
   // Set location labels
   document.getElementById("other-id").innerHTML = selectedNode.id;

@@ -18,7 +18,7 @@ var selectedRow = null;
 function initializeMap() {
   
   // Initialize map
-  map = L.map("map").setView({ lon: 0, lat: 0 }, 0);
+  map = L.map("map").setView({ lon: 9.167, lat: 48.275 }, 8);
   
   // Add tiles
   L.tileLayer("https://tiles.fmi.uni-stuttgart.de/{z}/{x}/{y}.png").addTo(map);
@@ -81,6 +81,25 @@ function onPopupOpen(node, distance) {
   selectedNode = node;
 }
 
+// Show node marker on map
+function showNode(node) {
+  
+  // Remove markers/routes and clear selected node ui elements
+  clearSelectedNode();
+  
+  // Set marker
+  var marker = L.marker({ lon: node.longitude, lat: node.latitude }, { riseOnHover: true })
+    .bindPopup("<p>Node " + node.id + "</p>")
+    .on("popupopen", function() { return onPopupOpen(node, "-"); }).addTo(map);
+  
+  node.start = null;
+  node.marker = marker;
+  
+  neighborMarkers.push(marker);
+  
+  marker.openPopup();
+}
+
 // Show start point marker on map
 function showStart(longitude, latitude) {
   
@@ -133,6 +152,9 @@ function showRoute(route) {
   geoRoute = L.geoJson(geoJson, { style: style }).addTo(map);
 
   // Show/hide ui elements
+  document.getElementById("right-button").classList.add("invisible");
+  document.getElementById("search-container").classList.add("hidden");
+    
   document.getElementById("sidebar-select-node").classList.add("hidden");
   document.getElementById("sidebar-show-route").classList.remove("hidden");
   

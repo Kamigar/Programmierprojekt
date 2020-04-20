@@ -60,6 +60,7 @@ public class App {
 	static enum Mode {
 		NONE,
 		
+		NBI, // node-by-id
 		OTO, // one-to-one
 		OTA, // one-to-all
 		OTM, // one-to-many
@@ -153,6 +154,31 @@ public class App {
 				+ (double)(endTime - startTime) / 1000000000 + " seconds");
 		
 		return _nodes;	
+	}
+	
+	// Find node by ID
+	public void findNode(Parameters param, Logger logger) throws IOException, FatalFailure {
+	  
+	  if (param.start >= 0 && param.start < _nodes.length) {
+
+	    // Node found
+
+	    param.requestOut.write("1");
+
+	    writeNode(_nodes[param.start], param.requestOut, param.printLocation, false, false);
+
+	    logger.info(System.lineSeparator() + "Found node " + param.start);
+
+	  } else {
+
+	    // Node not found
+	    
+	    param.requestOut.write("0");
+	    
+	    logger.info(System.lineSeparator() + "Node " + param.start + " not found");
+	  }
+
+	  param.requestOut.write("\n");
 	}
 	
 	// Calculate distances from one starting point
