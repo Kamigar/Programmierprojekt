@@ -12,6 +12,8 @@ OPERATIONS:
 The program is able to calculate shortest paths and nearest neighbors.
 You can start one of these calculations or a web server which handles requests over HTTP.
 
+-nbi, --node-by-id <nodeID>     Find node information by ID
+
 -oto, --one-to-one              Calculate distances between points
 
 -ota, --one-to-all <srcID>      Calculate all distances from start point <srcID>
@@ -58,6 +60,8 @@ The program operates on 2 input (default: stdin) and 2 output (default: stdout) 
 OUTPUT FORMAT OPTIONS:
 
 The output of a calculation looks like this:
+  Output format: --node-by-id
+                 [success] [node]
   Output format: --one-to-one, --one-to-all, --one-to-many
                  FOR EACH ROUTE:
 	           [cost] [node]
