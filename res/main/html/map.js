@@ -1,8 +1,14 @@
 
-const style = {
+const neighborStyle = {
   "color": "#ff7800",
   "weight": 5,
-  "opacity": 1
+  "opacity": 0.8
+};
+
+const routeStyle = {
+  "color": "#7878ff",
+  "weight": 5,
+  "opacity": 0.8
 };
 
 var map;
@@ -44,10 +50,6 @@ function onMapClick(e) {
   case STATE_SELECTFIRST:
   case STATE_SELECTSECOND:
 
-    // Set location labels
-    document.getElementById("selected-latitude").innerHTML = e.latlng.lat;
-    document.getElementById("selected-longitude").innerHTML = e.latlng.lng;
-    
     // Get nearest neighbor to selected point
     calculateNextNode(e.latlng.lng, e.latlng.lat);
     break;
@@ -103,6 +105,10 @@ function showNode(node) {
 // Show start point marker on map
 function showStart(longitude, latitude) {
   
+  // Set location labels
+  document.getElementById("selected-latitude").innerHTML = latitude;
+  document.getElementById("selected-longitude").innerHTML = longitude;
+    
   // Remove old markers and routes from map
   removeNeighbors();
   
@@ -128,7 +134,7 @@ function showNeighbor(node, distance, start) {
       "coordinates": [[start.longitude, start.latitude], [node.longitude, node.latitude]]
   };
   
-  var route = L.geoJson(geoJson, { style: style }).addTo(map);
+  var route = L.geoJson(geoJson, { style: neighborStyle }).addTo(map);
 
   node.start = start;
   node.marker = marker;
@@ -149,7 +155,7 @@ function showRoute(route) {
       "coordinates": route.path
   };
   
-  geoRoute = L.geoJson(geoJson, { style: style }).addTo(map);
+  geoRoute = L.geoJson(geoJson, { style: routeStyle }).addTo(map);
 
   // Show/hide ui elements
   document.getElementById("right-button").classList.add("invisible");
