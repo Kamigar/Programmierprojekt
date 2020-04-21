@@ -16,7 +16,10 @@ window.onload = function() {
     history.pushState("", null, null);
     window.onpopstate = function() {
       history.pushState("", null, null);
-      back();
+
+      // Go back if loading screen is not active
+      if (document.getElementById("loading-screen").classList.contains("hidden"))
+        back();
     };
   } else {
     var ignore = true;
@@ -96,12 +99,50 @@ function back() {
 // Process user click on search button
 function searchButtonClicked() {
   
-  var id = parseInt(document.getElementById("node-input").value);
+  var input = document.getElementById("search-input").value;
   
-  if (!isNaN(id))
+  // Remove parenthesis
+  if (input.startsWith("(") && input.endsWith(")"))
+    input = input.substring(1, input.length - 1);
+  
+  if (input.includes(",") || input.includes(";") || input.includes("|")) {
+
+    // Parse coordinates
+    
+    var firstIndex = function(symbols) {
+      var x = -1;
+      for (var i = 0; i < symbols.length; i++) {
+        var y = input.indexOf(symbols[i]);
+        x = (x < 0 ? y : (y < 0 ? x : Math.min(x, y)));
+      }
+      return x;
+    };
+
+    var index = firstIndex([ ",", ";", "|" ]);
+    
+    var latitude = parseFloat(input.substring(0, index));
+    var longitude = parseFloat(input.substring(index + 1, input.length));
+    
+    if (isNaN(latitude) || isNaN(longitude)) {
+      alert("Please enter coordinates or a valid node ID");
+      return;
+    }
+    
+    calculateNextNode(longitude, latitude);
+    
+  } else {
+
+    // Parse node ID
+
+    var id = parseInt(input);
+    
+    if (isNaN(id)) {
+      alert("Please enter coordinates or a valid node ID");
+      return;
+    }
+    
     findNode(id);
-  else
-    alert("Please enter a valid node ID");
+  }
 }
 
 // Process user click on left button
